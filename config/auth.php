@@ -1,0 +1,93 @@
+<?php
+
+return [
+
+   'defaults' => [
+      'guard' => 'api_cartero',
+      'passwords' => 'carteros',
+   ],
+
+   'guards' => [
+      'cartero' => [
+         'driver' => 'session',
+         'provider' => 'carteros',
+      ],
+      'sucursal' => [
+         'driver' => 'session',
+         'provider' => 'sucursales',
+      ],
+      'api_cartero' => [
+         'driver' => 'jwt',
+         'provider' => 'carteros',
+      ],
+      'api_sucursal' => [
+         'driver' => 'jwt',
+         'provider' => 'sucursales',
+      ],
+      'admin' => [
+         'driver' => 'session',
+         'provider' => 'administrador',
+      ],
+      'api_admin' => [
+         'driver' => 'jwt',
+         'provider' => 'administrador',
+      ],
+      'encargado' => [
+         'driver' => 'session',
+         'provider' => 'encargados',
+      ],
+      'api_encargado' => [
+         'driver' => 'jwt',
+         'provider' => 'encargados',
+      ],
+   ],
+
+   'providers' => [
+      'carteros' => [
+         'driver' => 'eloquent',
+         'model' => App\Models\Cartero::class,
+      ],
+      'sucursales' => [
+         'driver' => 'eloquent',
+         'model' => App\Models\Sucursale::class,
+      ],
+      'administrador' => [
+         'driver' => 'eloquent',
+         'model' => App\Models\User::class,
+      ],
+      'encargados' => [
+         'driver' => 'eloquent',
+         'model' => App\Models\encargado::class,
+      ],
+   ],
+
+   'passwords' => [
+      'carteros' => [
+         'provider' => 'carteros',
+         'table' => 'password_resets',
+         'expire' => 60,
+         'throttle' => 60,
+      ],
+      'sucursales' => [
+         'provider' => 'sucursales',
+         'table' => 'password_resets',
+         'expire' => 60,
+         'throttle' => 60,
+      ],
+      'administrador' => [
+         'provider' => 'administrador',
+         'table' => 'password_resets',
+         'expire' => 60,
+         'throttle' => 60,
+      ],
+      'encargados' => [
+         'provider' => 'encargados',
+         'table' => 'password_resets',
+         'expire' => 60,
+         'throttle' => 60,
+      ],
+   ],
+
+   'password_timeout' => 10800,
+
+];
