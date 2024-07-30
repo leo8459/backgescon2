@@ -40,6 +40,14 @@ return [
          'driver' => 'jwt',
          'provider' => 'encargados',
       ],
+      'gestore' => [
+         'driver' => 'session',
+         'provider' => 'gestores',
+      ],
+      'api_gestore' => [
+         'driver' => 'jwt',
+         'provider' => 'gestores',
+      ],
    ],
 
    'providers' => [
@@ -58,6 +66,10 @@ return [
       'encargados' => [
          'driver' => 'eloquent',
          'model' => App\Models\encargado::class,
+      ],
+      'gestores' => [
+         'driver' => 'eloquent',
+         'model' => App\Models\Gestore::class,
       ],
    ],
 
@@ -82,6 +94,12 @@ return [
       ],
       'encargados' => [
          'provider' => 'encargados',
+         'table' => 'password_resets',
+         'expire' => 60,
+         'throttle' => 60,
+      ],
+      'gestores' => [
+         'provider' => 'gestores',
          'table' => 'password_resets',
          'expire' => 60,
          'throttle' => 60,
