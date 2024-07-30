@@ -92,7 +92,7 @@ class EncargadoController extends Controller
         return $encargado;
     }
 
-    public function login4(Request $request)
+    public function login5(Request $request)
     {
         $credentials = $request->only('email', 'password');
 
