@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\DetalleSolicitude;
 use App\Models\Solicitude;
+use App\Models\Tarifa;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -18,7 +20,7 @@ class SolicitudeController extends Controller
   
         public function index()
     {
-        $solicitudes = Solicitude::with(['carteroRecogida', 'carteroEntrega', 'sucursale'])->get();
+        $solicitudes = Solicitude::with(['carteroRecogida', 'carteroEntrega', 'sucursale', 'tarifa'])->get();
         return response()->json($solicitudes);
     }
 
@@ -36,6 +38,7 @@ class SolicitudeController extends Controller
     $solicitude->cartero_recogida_id = $request->cartero_recogida_id?? null;
     $solicitude->cartero_entrega_id = $request->cartero_entrega_id?? null;
     $solicitude->sucursale_id = $request->sucursale_id;
+    $solicitude->tarifa_id = $request->tarifa_id?? null;
     $solicitude->guia = $request->guia;
     $solicitude->peso_o = $request->peso_o;
     $solicitude->peso_v = $request->peso_v;
@@ -86,9 +89,11 @@ class SolicitudeController extends Controller
      */
     public function update(Request $request, Solicitude $solicitude)
     {
+        $solicitude->tarifa_id = $request->tarifa_id?? null;
         $solicitude->sucursale_id = $request->sucursale_id;
         $solicitude->cartero_recogida_id = $request->cartero_recogida_id?? null;
         $solicitude->cartero_entrega_id = $request->cartero_entrega_id?? null;
+        
         $solicitude->guia = $request->guia;
         $solicitude->peso_o = $request->peso_o;
         $solicitude->peso_v = $request->peso_v;
@@ -163,5 +168,15 @@ class SolicitudeController extends Controller
             return response()->json(['error' => 'Error al marcar la solicitud como recogida.'], 500);
         }
     }
+   // En tu controlador
+public function getTarifas(Request $request) {
+    $sucursaleId = $request->query('sucursale_id');
+    if ($sucursaleId) {
+        $tarifas = Tarifa::where('sucursale_id', $sucursaleId)->get();
+    } else {
+        $tarifas = Tarifa::all(); // O manejar el caso donde no se proporcione sucursale_id
+    }
+    return response()->json($tarifas);
+}
 
 }

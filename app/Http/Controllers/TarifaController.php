@@ -29,13 +29,13 @@ class TarifaController extends Controller
     {
         $tarifa = new tarifa();
         $tarifa->departamento = $request->departamento;
-        $tarifa->servicio = $request->servicio;
-        $tarifa->nacional_extra = $request->nacional_extra;
-        $tarifa->servicioprov = $request->servicioprov;
-        $tarifa->prov_extra = $request->prov_extra;
-        $tarifa->servicioexpress = $request->servicioexpress;
-        $tarifa->expres_extra = $request->expres_extra;
-        $tarifa->sucursale_id = $request->sucursale_id;
+        $tarifa->servicio = $request->servicio;//nacional
+        $tarifa->nacional_extra = $request->nacional_extra;//nacional
+        $tarifa->servicioprov = $request->servicioprov;//provincia
+        $tarifa->prov_extra = $request->prov_extra;//provincia
+        $tarifa->servicioexpress = $request->servicioexpress;//express
+        $tarifa->expres_extra = $request->expres_extra;//express
+        $tarifa->sucursale_id = $request->sucursale_id;//nacional
         $tarifa->save();
         return $tarifa;
 
@@ -62,12 +62,12 @@ class TarifaController extends Controller
     public function update(Request $request, tarifa $tarifa)
     {
         $tarifa->departamento = $request->departamento;
-        $tarifa->servicio = $request->servicio;
-        $tarifa->nacional_extra = $request->nacional_extra;
-        $tarifa->servicioprov = $request->servicioprov;
-        $tarifa->prov_extra = $request->prov_extra;
-        $tarifa->servicioexpress = $request->servicioexpress;
-        $tarifa->expres_extra = $request->expres_extra;
+        $tarifa->servicio = $request->servicio;//nacional
+        $tarifa->nacional_extra = $request->nacional_extra;//nacional
+        $tarifa->servicioprov = $request->servicioprov;//provincia
+        $tarifa->prov_extra = $request->prov_extra;//provincia
+        $tarifa->servicioexpress = $request->servicioexpress;//express
+        $tarifa->expres_extra = $request->expres_extra;//express
 
         $tarifa->sucursale_id = $request->sucursale_id;
         $tarifa->save();

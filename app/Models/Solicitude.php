@@ -22,4 +22,8 @@ class Solicitude extends Model
     {
         return $this->belongsTo(Cartero::class, 'cartero_entrega_id');
     }
+    public function tarifa()
+    {
+        return $this->belongsTo(Tarifa::class);
+    }
 }

@@ -13,6 +13,10 @@ Route::middleware(['auth:api_cartero'])->group(function () {
     Route::put('/solicitudesrecojo/{solicitude}', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega/{solicitude}', 'SolicitudeController@markAsEntregado');
     Route::put('/marcarrecogido/{solicitude}', 'SolicitudeController@marcarRecogido');
+
+
+    Route::get('/getTarifas', 'SolicitudeController@getTarifas');
+
 });
 
 Route::post('/login3', 'CarteroController@login3'); // Login de Cartero
