@@ -23,12 +23,14 @@ return new class extends Migration
             $table->string('peso_v')->nullable();
             $table->string('remitente')->nullable();
             $table->string('direccion')->nullable();
+            $table->string('zona_r')->nullable();
             $table->string('telefono')->nullable();
             $table->string('contenido')->nullable();
             $table->date('fecha')->nullable();
             $table->string('destinatario')->nullable();
             $table->string('telefono_d')->nullable();
             $table->string('direccion_d')->nullable();
+            $table->string('zona_d')->nullable();
             $table->string('ciudad')->nullable();
             $table->string('nombre_d')->nullable();
             $table->string('ci_d')->nullable();

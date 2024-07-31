@@ -9,6 +9,7 @@ Route::middleware(['auth:api_encargado'])->group(function () {
     Route::apiResource('/solicitudes5','SolicitudeController');
     Route::apiResource('/encargados5','EncargadoController');
     Route::apiResource('/asignar5','DetallecarteroController');
+    Route::apiResource('/sucursales5','SucursaleController');  //editar agragar eliminar listar apiresource
 
     Route::put('/solicitudesrecojo5/{solicitude}', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega5/{solicitude}', 'SolicitudeController@markAsEntregado');
