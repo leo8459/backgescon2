@@ -15,4 +15,9 @@ class Tarifa extends Model
     {
         return $this->belongsTo(Sucursale::class);
     }
+
+    public function solicitudes()
+    {
+        return $this->hasMany(Solicitude::class);
+    }
 }

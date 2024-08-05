@@ -24,6 +24,11 @@ class Sucursale extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(Solicitude::class);
     }
+    public function tarifas()
+    {
+        return $this->hasMany(Tarifa::class);
+    }
+
 
 
     protected $table = 'sucursales'; // Nombre de la tabla de maestros si es personalizada

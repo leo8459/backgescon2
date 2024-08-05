@@ -26,4 +26,5 @@ class Solicitude extends Model
     {
         return $this->belongsTo(Tarifa::class);
     }
+    
 }

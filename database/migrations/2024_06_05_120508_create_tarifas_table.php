@@ -17,11 +17,8 @@ return new class extends Migration
             $table->id();
             $table->string('departamento')->nullable();
             $table->string('servicio')->nullable();
-            $table->string('nacional_extra')->nullable();
-            $table->string('servicioprov')->nullable();
-            $table->string('prov_extra')->nullable();
-            $table->string('servicioexpress')->nullable();
-            $table->string('expres_extra')->nullable();
+            $table->string('precio')->nullable();
+            $table->string('precio_extra')->nullable();
 
             $table->foreignId('sucursale_id')->nullable()->constrained('sucursales')->onDelete('cascade');
             $table->timestamps();

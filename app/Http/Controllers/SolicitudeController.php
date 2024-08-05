@@ -146,6 +146,7 @@ class SolicitudeController extends Controller
         $solicitude->estado = 2; // Cambiar estado a "En camino"
         $solicitude->cartero_entrega_id = $request->cartero_entrega_id; // Asignar el cartero de entrega
         $solicitude->peso_v = $request->peso_v; // Actualizar el peso
+        $solicitude->nombre_d = $request->nombre_d; // Actualizar el peso
         $solicitude->save();
     
         return response()->json($solicitude);

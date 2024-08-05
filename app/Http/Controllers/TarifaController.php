@@ -16,7 +16,7 @@ class TarifaController extends Controller
      */
     public function index()
     {
-        return tarifa::with(['Sucursale'])->get();
+        return tarifa::with(['sucursale'])->get();
     }
 
     /**
@@ -30,11 +30,9 @@ class TarifaController extends Controller
         $tarifa = new tarifa();
         $tarifa->departamento = $request->departamento;
         $tarifa->servicio = $request->servicio;//nacional
-        $tarifa->nacional_extra = $request->nacional_extra;//nacional
-        $tarifa->servicioprov = $request->servicioprov;//provincia
-        $tarifa->prov_extra = $request->prov_extra;//provincia
-        $tarifa->servicioexpress = $request->servicioexpress;//express
-        $tarifa->expres_extra = $request->expres_extra;//express
+        $tarifa->precio = $request->precio;//nacional
+        $tarifa->precio_extra = $request->precio_extra;//nacional
+
         $tarifa->sucursale_id = $request->sucursale_id;//nacional
         $tarifa->save();
         return $tarifa;
@@ -63,11 +61,8 @@ class TarifaController extends Controller
     {
         $tarifa->departamento = $request->departamento;
         $tarifa->servicio = $request->servicio;//nacional
-        $tarifa->nacional_extra = $request->nacional_extra;//nacional
-        $tarifa->servicioprov = $request->servicioprov;//provincia
-        $tarifa->prov_extra = $request->prov_extra;//provincia
-        $tarifa->servicioexpress = $request->servicioexpress;//express
-        $tarifa->expres_extra = $request->expres_extra;//express
+        $tarifa->precio = $request->precio;//nacional
+        $tarifa->precio_extra = $request->precio_extra;//nacional
 
         $tarifa->sucursale_id = $request->sucursale_id;
         $tarifa->save();

@@ -1,1 +1,1 @@
-php artisan migrate --path=/database/migrations/2024_06_05_113926_create_sucursales_table.php
+php artisan migrate --path=/database/migrations/2024_06_05_120508_create_tarifas_table.php
