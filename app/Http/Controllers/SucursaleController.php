@@ -47,6 +47,7 @@ class SucursaleController extends Controller
          $sucursale->direccion = $request->direccion;
          $sucursale->contacto_administrativo = $request->contacto_administrativo;
          $sucursale->acuerdos = $request->acuerdos;
+         $sucursale->codigo_cliente = $request->codigo_cliente;
          $sucursale->empresa_id = $request->empresa_id;
          $sucursale->password = Hash::make($request->input('password'));
          $sucursale->email = $request->email;
@@ -87,6 +88,7 @@ class SucursaleController extends Controller
         $sucursale->ini_vigencia = $request->ini_vigencia;
         $sucursale->direccion = $request->direccion;
         $sucursale->acuerdos = $request->acuerdos;
+        $sucursale->codigo_cliente = $request->codigo_cliente;
         $sucursale->contacto_administrativo = $request->contacto_administrativo;
         $sucursale->save();
         $sucursale->email = $request->email;

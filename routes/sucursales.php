@@ -16,10 +16,14 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
     Route::put('/solicitudesrecojo2/{solicitude}/', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega2/{solicitude}/', 'SolicitudeController@markAsEntregado');
     Route::put('/marcarrecogido2/{solicitude}/', 'SolicitudeController@marcarRecogido');
+    Route::put('/solicitudes2/{solicitude}/destroy', 'SolicitudeController@destroy');
 
 
 
     Route::get('/getTarifas2', 'SolicitudeController@getTarifas');
+
+
+    Route::post('solicitudes/generar-guia', 'SolicitudeController@generateGuia');
 
 });
 Route::post('/login2', 'SucursaleController@login2');

@@ -21,11 +21,8 @@ class Gestore extends Authenticatable implements JWTSubject
      *
      * @var array<int, string>
      */
-    protected $fillable = [
-        'nombre',
-        'email',
-        'password',
-    ];
+    protected $fillable = ['nombre', 'apellidos', 'email', 'password', 'estado'];
+
 
     /**
      * The attributes that should be hidden for serialization.
