@@ -93,20 +93,26 @@ class CarteroController extends Controller
         return $cartero;
     }
     public function login3(Request $request)
-    {
-        $credentials = $request->only('email', 'password');
-    
-        try {
-            if (!$token = Auth::guard('api_cartero')->attempt($credentials)) {
-                return response()->json(['error' => 'Credenciales incorrectas'], 400);
-            }
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'No se pudo crear el token'], 500);
+{
+    $credentials = $request->only('email', 'password');
+
+    try {
+        if (!$token = Auth::guard('api_cartero')->attempt($credentials)) {
+            return response()->json(['error' => 'Credenciales incorrectas'], 400);
         }
-    
-        $cartero = Auth::guard('api_cartero')->user();
-        return response()->json(['message' => 'Inicio de sesión correcto', 'token' => $token, 'cartero' => $cartero]);
+    } catch (JWTException $e) {
+        return response()->json(['error' => 'No se pudo crear el token'], 500);
     }
+
+    $cartero = Auth::guard('api_cartero')->user();
+    return response()->json([
+        'message' => 'Inicio de sesión correcto',
+        'token' => $token,
+        'cartero' => $cartero,
+        'userType' => 'cartero'
+    ]);
+}
+
     
     
 }

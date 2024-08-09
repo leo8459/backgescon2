@@ -108,7 +108,7 @@ class UserController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
-
+    
         try {
             if (!$token = Auth::guard('api_admin')->attempt($credentials)) {
                 return response()->json(['error' => 'Credenciales incorrectas'], 400);
@@ -116,10 +116,16 @@ class UserController extends Controller
         } catch (JWTException $e) {
             return response()->json(['error' => 'No se pudo crear el token'], 500);
         }
-
+    
         $user = Auth::guard('api_admin')->user();
-        return response()->json(['message' => 'Inicio de sesión correcto', 'token' => $token, 'user' => $user]);
+        return response()->json([
+            'message' => 'Inicio de sesión correcto',
+            'token' => $token,
+            'user' => $user,
+            'userType' => 'administrador'
+        ]);
     }
+    
     
 
 }

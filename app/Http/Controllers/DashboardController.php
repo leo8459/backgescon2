@@ -1,60 +1,112 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Models\Alquilere;
-use App\Models\Cliente;
-use App\Models\Casilla;
+
+use App\Models\Solicitude;
+use App\Models\Sucursale;
+use App\Models\Tarifa;
 use App\Models\Seccione;
 use App\Models\User;
 use App\Models\Precio;
 use App\Models\Categoria;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function patito() {
-        return [
-            "alquileres" => Alquilere::where('estado', 1)->count(),
-            "users" => User::where('estado', 1)->count(),
-            "clientes" => Cliente::where('estado', 1)->count(),
-            "casillas" => Casilla::where('estado', 1)->count(),
-            "precios" => Precio::where('estado', 1)->count(),
-            "categorias" => Categoria::where('nombre', 'Pequeña')->count(),
-            "pequeñas" => Casilla::where('categoria_id', 1)->count(),
-            "medianas" => Casilla::where('categoria_id', 2)->count(),
-            "gabetas" => Casilla::where('categoria_id', 3)->count(),
-            "cajones" => Casilla::where('categoria_id', 4)->count(),
-            "pequeñaslibres1" => Casilla::where('categoria_id', 1)->where('estado', 1)->count(),
-            "medianaslibres" => Casilla::where('categoria_id', 2)->where('estado', 1)->count(),
-            "gabetaslibres" => Casilla::where('categoria_id', 3)->where('estado', 1)->count(),
-            "cajoneslibres" => Casilla::where('categoria_id', 4)->where('estado', 1)->count(),
-            "pequeñasocupadas" => Alquilere::whereHas('casilla', function ($query) {
-                $query->where('categoria_id', 1);
-            })->where('estado', 1)->count(),
+    public function todasSolicitudes(Request $request)
+    {
+        $sucursalId = $request->query('sucursal_id');
 
+        $query = Solicitude::query();
 
-            "medianasocupadas" => Alquilere::whereHas('casilla', function ($query) {
-                $query->where('categoria_id', 2);
-            })->where('estado', 1)->count(),
+        if ($sucursalId) {
+            $query->where('sucursale_id', $sucursalId);
+        }
 
+        $totalSolicitudes = $query->count();
 
-            "gabetaocupadas" => Alquilere::whereHas('casilla', function ($query) {
-                 $query->where('categoria_id', 3);
-                        })->where('estado', 1)->count(),
+        return response()->json(['total' => $totalSolicitudes]);
+    }
 
+    public function totalNombreD(Request $request)
+    {
+        $sucursalId = $request->query('sucursal_id');
 
-            "cajonocupadas" => Alquilere::whereHas('casilla', function ($query) {
-                $query->where('categoria_id', 4);
-                                    })->where('estado', 1)->count(),
-                        
-                        
-            
+        $query = Solicitude::whereNotNull('nombre_d');
 
+        if ($sucursalId) {
+            $query->where('sucursale_id', $sucursalId);
+        }
 
-           
-        ];
+        $totalGastado = $query->sum(DB::raw('CAST(nombre_d AS NUMERIC)'));
+
+        return response()->json(['total_gastado' => $totalGastado]);
+    }
+    public function solicitudesHoy(Request $request)
+    {
+        $sucursalId = $request->query('sucursal_id');
+        $hoy = Carbon::today()->toDateString();
+
+        $query = Solicitude::whereDate('fecha', $hoy);
+
+        if ($sucursalId) {
+            $query->where('sucursale_id', $sucursalId);
+        }
+
+        $totalSolicitudesHoy = $query->count();
+
+        return response()->json(['total' => $totalSolicitudesHoy]);
+    }
+    public function solicitudesEstado1(Request $request)
+    {
+        return $this->solicitudesPorEstado($request, 1);
+    }
+
+    public function solicitudesEstado3(Request $request)
+    {
+        return $this->solicitudesPorEstado($request, 3);
+    }
+
+    public function solicitudesEstado0(Request $request)
+    {
+        return $this->solicitudesPorEstado($request, 0);
     }
     
+    public function solicitudesEstado2(Request $request)
+    {
+        return $this->solicitudesPorMultiplesEstados($request, [2, 5]);
+    }
+    private function solicitudesPorEstado(Request $request, $estado)
+    {
+        $sucursalId = $request->query('sucursal_id');
+    
+        $query = Solicitude::where('estado', $estado);
+    
+        if ($sucursalId) {
+            $query->where('sucursale_id', $sucursalId);
+        }
+    
+        $totalSolicitudes = $query->count();
+    
+        return response()->json(['total' => $totalSolicitudes]);
+    }
+    
+    private function solicitudesPorMultiplesEstados(Request $request, $estados)
+    {
+        $sucursalId = $request->query('sucursal_id');
+    
+        $query = Solicitude::whereIn('estado', $estados);
+    
+        if ($sucursalId) {
+            $query->where('sucursale_id', $sucursalId);
+        }
+    
+        $totalSolicitudes = $query->count();
+    
+        return response()->json(['total' => $totalSolicitudes]);
+    }
 }
