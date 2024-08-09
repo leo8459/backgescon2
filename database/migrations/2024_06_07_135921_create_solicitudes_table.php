@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('peso_v')->nullable();
             $table->string('remitente')->nullable();
             $table->string('direccion')->nullable();
+            $table->string('direccion_especifica')->nullable();
             $table->string('zona_r')->nullable();
             $table->string('telefono')->nullable();
             $table->string('contenido')->nullable();
@@ -31,12 +32,14 @@ return new class extends Migration
             $table->string('destinatario')->nullable();
             $table->string('telefono_d')->nullable();
             $table->string('direccion_d')->nullable();
+            $table->string('direccion_especifica_d')->nullable();
             $table->string('zona_d')->nullable();
             $table->string('ciudad')->nullable();
             $table->string('nombre_d')->nullable();
             $table->string('ci_d')->nullable();
             $table->string('fecha_d')->nullable();
             $table->integer('estado')->default(1);
+            $table->string('observacion')->nullable();
             $table->text('firma_o')->nullable();
             $table->text('firma_d')->nullable();
 

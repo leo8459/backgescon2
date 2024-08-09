@@ -14,6 +14,8 @@ Route::middleware(['auth:api_encargado'])->group(function () {
     Route::put('/solicitudesrecojo5/{solicitude}', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega5/{solicitude}', 'SolicitudeController@markAsEntregado');
     Route::put('/marcarrecogido5/{solicitude}', 'SolicitudeController@marcarRecogido');
+    Route::put('/verificarsolicitudes5/{solicitude}', 'SolicitudeController@markAsVerified');
+    Route::put('/rechazado5/{solicitude}', 'SolicitudeController@Rechazado');
 
 
 
@@ -28,6 +30,9 @@ Route::get('/Esolicitudes-estado-1-hoy', 'DashboardEncargadoController@solicitud
 Route::get('/Esolicitudes-estado-2-hoy', 'DashboardEncargadoController@solicitudesEstado2Hoy');
 Route::get('/Esolicitudes-estado-3-hoy', 'DashboardEncargadoController@solicitudesEstado3Hoy');
 Route::get('/Esolicitudes-estado-5-hoy', 'DashboardEncargadoController@solicitudesEstado5Hoy');
+
+
+
 });
 
 Route::post('/login5', 'EncargadoController@login5'); // Login de Cartero

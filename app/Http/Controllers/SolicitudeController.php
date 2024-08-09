@@ -48,6 +48,7 @@ class SolicitudeController extends Controller
         $solicitude->peso_v = $request->peso_v;
         $solicitude->remitente = $request->remitente;
         $solicitude->direccion = $request->direccion;
+        $solicitude->direccion_especifica = $request->direccion_especifica;
         $solicitude->telefono = $request->telefono;
         $solicitude->contenido = $request->contenido;
         $solicitude->fecha = $request->fecha;
@@ -55,12 +56,14 @@ class SolicitudeController extends Controller
         $solicitude->destinatario = $request->destinatario;
         $solicitude->telefono_d = $request->telefono_d;
         $solicitude->direccion_d = $request->direccion_d;
+        $solicitude->direccion_especifica_d = $request->direccion_especifica_d;
         $solicitude->ciudad = $request->ciudad;
         $solicitude->firma_d = $request->firma_d;
         $solicitude->nombre_d = $request->nombre_d;
         $solicitude->ci_d = $request->ci_d;
         $solicitude->fecha_d = $request->fecha_d;
         $solicitude->estado = $request->estado ?? 1;
+        $solicitude->observacion = $request->observacion;
         $solicitude->zona_r = $request->zona_r;
         $solicitude->zona_d = $request->zona_d;
 
@@ -109,6 +112,7 @@ class SolicitudeController extends Controller
         $solicitude->peso_v = $request->peso_v;
         $solicitude->remitente = $request->remitente;
         $solicitude->direccion = $request->direccion;
+        $solicitude->direccion_especifica = $request->direccion_especifica;
         $solicitude->telefono = $request->telefono;
         $solicitude->contenido = $request->contenido;
         $solicitude->fecha = $request->fecha;
@@ -116,12 +120,14 @@ class SolicitudeController extends Controller
         $solicitude->destinatario = $request->destinatario;
         $solicitude->telefono_d = $request->telefono_d;
         $solicitude->direccion_d = $request->direccion_d;
+        $solicitude->direccion_especifica_d = $request->direccion_especifica_d;
         $solicitude->ciudad = $request->ciudad;
         $solicitude->firma_d = $request->firma_d;
         $solicitude->nombre_d = $request->nombre_d;
         $solicitude->ci_d = $request->ci_d;
         $solicitude->fecha_d = $request->fecha_d;
         $solicitude->estado = $request->estado;
+        $solicitude->observacion = $request->observacion;
         $solicitude->zona_r = $request->zona_r;
         $solicitude->zona_d = $request->zona_d;
         $solicitude->save();
@@ -138,15 +144,15 @@ class SolicitudeController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function destroy(Solicitude $solicitude)
-{
-    try {
-        $solicitude->estado = 0;
-        $solicitude->save();
-        return response()->json(['message' => 'Solicitud actualizada correctamente.'], 200);
-    } catch (\Exception $e) {
-        return response()->json(['message' => 'Error al actualizar la solicitud.', 'error' => $e->getMessage()], 500);
+    {
+        try {
+            $solicitude->estado = 0;
+            $solicitude->save();
+            return response()->json(['message' => 'Solicitud actualizada correctamente.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error al actualizar la solicitud.', 'error' => $e->getMessage()], 500);
+        }
     }
-}
 
     public function markAsEnCamino(Request $request, Solicitude $solicitude)
     {
@@ -232,5 +238,29 @@ class SolicitudeController extends Controller
         $newGuia = "{$sucursalCode}_{$sucursalOrigin}_{$tarifaCode}_{$newNumber}";
 
         return response()->json(['guia' => $newGuia]);
+    }
+    public function markAsVerified(Request $request, Solicitude $solicitude)
+    {
+        try {
+            $solicitude->estado = 4;
+            $solicitude->save();
+
+            return response()->json(['message' => 'Solicitud marcada como verificada exitosamente.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al marcar la solicitud como verificada.', 'exception' => $e->getMessage()], 500);
+        }
+    }
+
+    public function Rechazado(Request $request, Solicitude $solicitude)
+    {
+        try {
+            $solicitude->estado = 6;
+            $solicitude->observacion = $request->observacion; // Actualizar el peso
+            $solicitude->save();
+
+            return response()->json(['message' => 'Solicitud marcada como verificada exitosamente.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al marcar la solicitud como verificada.', 'exception' => $e->getMessage()], 500);
+        }
     }
 }
