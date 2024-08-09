@@ -14,6 +14,20 @@ Route::middleware(['auth:api_encargado'])->group(function () {
     Route::put('/solicitudesrecojo5/{solicitude}', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega5/{solicitude}', 'SolicitudeController@markAsEntregado');
     Route::put('/marcarrecogido5/{solicitude}', 'SolicitudeController@marcarRecogido');
+
+
+
+
+    Route::get('/Esolicitudes-hoy', 'DashboardEncargadoController@solicitudesHoy');
+Route::get('/Esolicitudes-estado-0', 'DashboardEncargadoController@solicitudesEstado0');
+Route::get('/Esolicitudes-estado-1', 'DashboardEncargadoController@solicitudesEstado1');
+Route::get('/Esolicitudes-estado-2', 'DashboardEncargadoController@solicitudesEstado2');
+Route::get('/Esolicitudes-estado-3', 'DashboardEncargadoController@solicitudesEstado3');
+Route::get('/Esolicitudes-estado-5', 'DashboardEncargadoController@solicitudesEstado5');
+Route::get('/Esolicitudes-estado-1-hoy', 'DashboardEncargadoController@solicitudesEstado1Hoy');
+Route::get('/Esolicitudes-estado-2-hoy', 'DashboardEncargadoController@solicitudesEstado2Hoy');
+Route::get('/Esolicitudes-estado-3-hoy', 'DashboardEncargadoController@solicitudesEstado3Hoy');
+Route::get('/Esolicitudes-estado-5-hoy', 'DashboardEncargadoController@solicitudesEstado5Hoy');
 });
 
 Route::post('/login5', 'EncargadoController@login5'); // Login de Cartero
