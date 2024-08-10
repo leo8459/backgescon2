@@ -8,7 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
-class DashboardAdminController extends Controller
+class DashboardGestorController extends Controller
 {
     public function solicitudesHoy()
     {

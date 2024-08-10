@@ -11,7 +11,6 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
     Route::apiResource('/solicitudes2','SolicitudeController');  //editar agragar eliminar listar apiresource
     Route::apiResource('/encargados2','EncargadoController');  //editar agragar eliminar listar apiresource
     Route::apiResource('/carteros2','CarteroController');  //editar agragar eliminar listar apiresource
-    Route::apiResource('/asignar2','DetallecarteroController');  //editar agragar eliminar listar apiresource
 
 
 
