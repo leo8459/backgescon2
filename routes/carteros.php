@@ -32,3 +32,5 @@ Route::middleware(['auth:api_cartero'])->group(function () {
 });
 
 Route::post('/login3', 'CarteroController@login3'); // Login de Cartero
+
+

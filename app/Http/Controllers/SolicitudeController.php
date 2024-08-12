@@ -208,37 +208,38 @@ class SolicitudeController extends Controller
         // Recuperar la sucursale y tarifa
         $sucursal = Sucursale::find($sucursaleId);
         $tarifa = Tarifa::find($tarifaId);
-
+    
         // Validar si ambos datos existen
         if (!$sucursal || !$tarifa) {
             return response()->json(['error' => 'Sucursal o tarifa no encontrados.'], 404);
         }
-
+    
         // Obtener el código de sucursal y tarifa
         $sucursalCode = str_pad($sucursal->codigo_cliente, 2, '0', STR_PAD_LEFT);
         $sucursalOrigin = str_pad($sucursal->origen, 2, '0', STR_PAD_LEFT); // Suponiendo que 'origen' es un número
         $tarifaCode = str_pad($tarifa->departamento, 2, '0', STR_PAD_LEFT);
-
+    
         // Obtener el último número secuencial para esa sucursal
         $lastGuia = Solicitude::where('sucursale_id', $sucursaleId)
             ->latest('id')
             ->first();
-
+    
         // Extraer el número secuencial del último ID de guía, si existe
         $lastNumber = 0;
         if ($lastGuia) {
-            $parts = explode('_', $lastGuia->guia);
-            $lastNumber = isset($parts[3]) ? intval($parts[3]) : 0;
+            $parts = str_split($lastGuia->guia, 6); // Dividir la guía para tomar la parte numérica
+            $lastNumber = isset($parts[1]) ? intval($parts[1]) : 0; // Eliminar el prefijo de 6 caracteres y obtener el número
         }
-
+    
         // Incrementar el número para la nueva guía
         $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-
-        // Generar la nueva guía
-        $newGuia = "{$sucursalCode}_{$sucursalOrigin}_{$tarifaCode}_{$newNumber}";
-
+    
+        // Generar la nueva guía concatenando todo sin espacios ni separadores
+        $newGuia = "{$sucursalCode}{$sucursalOrigin}{$tarifaCode}{$newNumber}";
+    
         return response()->json(['guia' => $newGuia]);
     }
+    
     public function markAsVerified(Request $request, Solicitude $solicitude)
     {
         try {

@@ -5,13 +5,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:api_admin'])->group(function () { 
     Route::apiResource('/users1', 'UserController')->parameters(['users1' => 'user']);
-    Route::apiResource('/empresas1', 'EmpresaController');  //editar agragar eliminar listar apiresource
-    Route::apiResource('/sucursales1', 'SucursaleController');  //editar agragar eliminar listar apiresource
-    Route::apiResource('/tarifas1', 'TarifaController');  //editar agragar eliminar listar apiresource
-    Route::apiResource('/solicitudes1', 'SolicitudeController');  //editar agragar eliminar listar apiresource
-    Route::apiResource('/encargados1', 'EncargadoController');  //editar agragar eliminar listar apiresource
-    Route::apiResource('/carteros1', 'CarteroController');  //editar agragar eliminar listar apiresource
-    Route::apiResource('/gestore1', 'GestoreController');  //editar agragar eliminar listar apiresource
+    Route::apiResource('/empresas1', 'EmpresaController')->parameters(['empresas1' => 'empresa']);  //editar agragar eliminar listar apiresource
+    Route::apiResource('/sucursales1', 'SucursaleController')->parameters(['sucursales1' => 'sucursale']);  //editar agragar eliminar listar apiresource
+    Route::apiResource('/tarifas1', 'TarifaController')->parameters(['tarifas1' => 'tarifa']);  //editar agragar eliminar listar apiresource
+    Route::apiResource('/solicitudes1', 'SolicitudeController')->parameters(['solicitudes1' => 'solicitude']);  //editar agragar eliminar listar apiresource
+    Route::apiResource('/encargados1', 'EncargadoController')->parameters(['encargados1' => 'encargado']);  //editar agragar eliminar listar apiresource
+    Route::apiResource('/carteros1', 'CarteroController')->parameters(['carteros1' => 'cartero']);  //editar agragar eliminar listar apiresource
+    Route::apiResource('/gestore1', 'GestoreController')->parameters(['gestore1' => 'gestore']);  //editar agragar eliminar listar apiresource
 
     Route::put('/solicitudesrecojo/{solicitude}/', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega/{solicitude}/', 'SolicitudeController@markAsEntregado');
