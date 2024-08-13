@@ -6,6 +6,7 @@ use App\Models\DetalleSolicitude;
 use App\Models\Solicitude;
 use App\Models\Sucursale;
 use App\Models\Tarifa;
+use Picqer\Barcode\BarcodeGeneratorPNG;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -35,41 +36,53 @@ class SolicitudeController extends Controller
      */
     public function store(Request $request)
     {
-        // Genera una nueva guía usando el sucursale_id y tarifa_id proporcionados
-        $guia = $this->generateGuia($request->sucursale_id, $request->tarifa_id)->getData()->guia;
+       // Genera una nueva guía usando el sucursale_id y tarifa_id proporcionados
+    $guia = $this->generateGuia($request->sucursale_id, $request->tarifa_id)->getData()->guia;
 
-        $solicitude = new Solicitude();
-        $solicitude->cartero_recogida_id = $request->cartero_recogida_id ?? null;
-        $solicitude->cartero_entrega_id = $request->cartero_entrega_id ?? null;
-        $solicitude->sucursale_id = $request->sucursale_id;
-        $solicitude->tarifa_id = $request->tarifa_id ?? null;
-        $solicitude->guia = $guia;
-        $solicitude->peso_o = $request->peso_o;
-        $solicitude->peso_v = $request->peso_v;
-        $solicitude->remitente = $request->remitente;
-        $solicitude->direccion = $request->direccion;
-        $solicitude->direccion_especifica = $request->direccion_especifica;
-        $solicitude->telefono = $request->telefono;
-        $solicitude->contenido = $request->contenido;
-        $solicitude->fecha = $request->fecha;
-        $solicitude->firma_o = $request->firma_o;
-        $solicitude->destinatario = $request->destinatario;
-        $solicitude->telefono_d = $request->telefono_d;
-        $solicitude->direccion_d = $request->direccion_d;
-        $solicitude->direccion_especifica_d = $request->direccion_especifica_d;
-        $solicitude->ciudad = $request->ciudad;
-        $solicitude->firma_d = $request->firma_d;
-        $solicitude->nombre_d = $request->nombre_d;
-        $solicitude->ci_d = $request->ci_d;
-        $solicitude->fecha_d = $request->fecha_d;
-        $solicitude->estado = $request->estado ?? 1;
-        $solicitude->observacion = $request->observacion;
-        $solicitude->zona_r = $request->zona_r;
-        $solicitude->zona_d = $request->zona_d;
+    $solicitude = new Solicitude();
+    $solicitude->cartero_recogida_id = $request->cartero_recogida_id ?? null;
+    $solicitude->cartero_entrega_id = $request->cartero_entrega_id ?? null;
+    $solicitude->sucursale_id = $request->sucursale_id;
+    $solicitude->tarifa_id = $request->tarifa_id ?? null;
+    $solicitude->guia = $guia;
+    $solicitude->peso_o = $request->peso_o;
+    $solicitude->peso_v = $request->peso_v;
+    $solicitude->remitente = $request->remitente;
+    $solicitude->direccion = $request->direccion;
+    $solicitude->direccion_especifica = $request->direccion_especifica;
+    $solicitude->telefono = $request->telefono;
+    $solicitude->contenido = $request->contenido;
+    $solicitude->fecha = $request->fecha;
+    $solicitude->firma_o = $request->firma_o;
+    $solicitude->destinatario = $request->destinatario;
+    $solicitude->telefono_d = $request->telefono_d;
+    $solicitude->direccion_d = $request->direccion_d;
+    $solicitude->direccion_especifica_d = $request->direccion_especifica_d;
+    $solicitude->ciudad = $request->ciudad;
+    $solicitude->firma_d = $request->firma_d;
+    $solicitude->nombre_d = $request->nombre_d;
+    $solicitude->ci_d = $request->ci_d;
+    $solicitude->fecha_d = $request->fecha_d;
+    $solicitude->estado = $request->estado ?? 1;
+    $solicitude->observacion = $request->observacion;
+    $solicitude->zona_r = $request->zona_r;
+    $solicitude->zona_d = $request->zona_d;
+    $solicitude->imagen = $request->imagen;
 
-        $solicitude->save();
+    // Generar el código de barras para la guía
+    $generator = new BarcodeGeneratorPNG();
+    $barcode = $generator->getBarcode($guia, $generator::TYPE_CODE_128);
+    
+    // Guardar el código de barras en la base de datos como imagen PNG
+    $solicitude->codigo_barras = base64_encode($barcode);
 
-        return $solicitude;
+    $solicitude->save();
+
+    return $solicitude;
+
+
+
+
     }
 
 
@@ -130,6 +143,12 @@ class SolicitudeController extends Controller
         $solicitude->observacion = $request->observacion;
         $solicitude->zona_r = $request->zona_r;
         $solicitude->zona_d = $request->zona_d;
+
+        $solicitude->imagen = $request->imagen;
+
+
+
+
         $solicitude->save();
 
         return $solicitude;
@@ -204,41 +223,42 @@ class SolicitudeController extends Controller
     }
 
     public function generateGuia($sucursaleId, $tarifaId)
-    {
-        // Recuperar la sucursale y tarifa
-        $sucursal = Sucursale::find($sucursaleId);
-        $tarifa = Tarifa::find($tarifaId);
-    
-        // Validar si ambos datos existen
-        if (!$sucursal || !$tarifa) {
-            return response()->json(['error' => 'Sucursal o tarifa no encontrados.'], 404);
-        }
-    
-        // Obtener el código de sucursal y tarifa
-        $sucursalCode = str_pad($sucursal->codigo_cliente, 2, '0', STR_PAD_LEFT);
-        $sucursalOrigin = str_pad($sucursal->origen, 2, '0', STR_PAD_LEFT); // Suponiendo que 'origen' es un número
-        $tarifaCode = str_pad($tarifa->departamento, 2, '0', STR_PAD_LEFT);
-    
-        // Obtener el último número secuencial para esa sucursal
-        $lastGuia = Solicitude::where('sucursale_id', $sucursaleId)
-            ->latest('id')
-            ->first();
-    
-        // Extraer el número secuencial del último ID de guía, si existe
-        $lastNumber = 0;
-        if ($lastGuia) {
-            $parts = str_split($lastGuia->guia, 6); // Dividir la guía para tomar la parte numérica
-            $lastNumber = isset($parts[1]) ? intval($parts[1]) : 0; // Eliminar el prefijo de 6 caracteres y obtener el número
-        }
-    
-        // Incrementar el número para la nueva guía
-        $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-    
-        // Generar la nueva guía concatenando todo sin espacios ni separadores
-        $newGuia = "{$sucursalCode}{$sucursalOrigin}{$tarifaCode}{$newNumber}";
-    
-        return response()->json(['guia' => $newGuia]);
+{
+    // Recuperar la sucursale y tarifa
+    $sucursal = Sucursale::find($sucursaleId);
+    $tarifa = Tarifa::find($tarifaId);
+
+    // Validar si ambos datos existen
+    if (!$sucursal || !$tarifa) {
+        return response()->json(['error' => 'Sucursal o tarifa no encontrados.'], 404);
     }
+
+    // Obtener el código de sucursal y tarifa
+    $sucursalCode = str_pad($sucursal->codigo_cliente, 2, '0', STR_PAD_LEFT);
+    $sucursalOrigin = str_pad($sucursal->origen, 2, '0', STR_PAD_LEFT); // Suponiendo que 'origen' es un número
+    $tarifaCode = str_pad($tarifa->departamento, 2, '0', STR_PAD_LEFT);
+
+    // Obtener el último número secuencial para esa sucursal
+    $lastGuia = Solicitude::where('sucursale_id', $sucursaleId)
+        ->latest('id')
+        ->first();
+
+    // Extraer el número secuencial del último ID de guía, si existe
+    $lastNumber = 0;
+    if ($lastGuia) {
+        // Extraer los últimos 4 dígitos de la guía (asumiendo que estos representan el número secuencial)
+        $lastNumber = intval(substr($lastGuia->guia, -4));
+    }
+
+    // Incrementar el número para la nueva guía
+    $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+
+    // Generar la nueva guía concatenando todo sin espacios ni separadores
+    $newGuia = "{$sucursalCode}{$sucursalOrigin}{$tarifaCode}{$newNumber}";
+
+    return response()->json(['guia' => $newGuia]);
+}
+
     
     public function markAsVerified(Request $request, Solicitude $solicitude)
     {

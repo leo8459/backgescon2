@@ -12,6 +12,9 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
         "mike42/escpos-php": "^2.2",
+        "milon/barcode": "^11.0",
+        "picqer/php-barcode-generator": "^2.4",
+        "simplesoftwareio/simple-qrcode": "^4.2",
         "tymon/jwt-auth": "^2.1"
     },
     "require-dev": {
