@@ -48,6 +48,14 @@ return [
          'driver' => 'jwt',
          'provider' => 'gestores',
       ],
+      'contratos' => [
+         'driver' => 'session',
+         'provider' => 'contratos',
+      ],
+      'api_contratos' => [
+         'driver' => 'jwt',
+         'provider' => 'contratos',
+      ],
    ],
 
    'providers' => [
@@ -70,6 +78,10 @@ return [
       'gestores' => [
          'driver' => 'eloquent',
          'model' => App\Models\Gestore::class,
+      ],
+      'contratos' => [
+         'driver' => 'eloquent',
+         'model' => App\Models\Contratos::class,
       ],
    ],
 
@@ -100,6 +112,12 @@ return [
       ],
       'gestores' => [
          'provider' => 'gestores',
+         'table' => 'password_resets',
+         'expire' => 60,
+         'throttle' => 60,
+      ],
+      'contratos' => [
+         'provider' => 'contratos',
          'table' => 'password_resets',
          'expire' => 60,
          'throttle' => 60,

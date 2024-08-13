@@ -66,6 +66,10 @@ class RouteServiceProvider extends ServiceProvider
             ->middleware('gestores')
             ->namespace($this->controllers)
             ->group(base_path('routes/gestores.php'));
+            Route::prefix('contratos')
+            ->middleware('contratos')
+            ->namespace($this->controllers)
+            ->group(base_path('routes/contratos.php'));
       });
    }
 

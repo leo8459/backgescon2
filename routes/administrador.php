@@ -12,6 +12,7 @@ Route::middleware(['auth:api_admin'])->group(function () {
     Route::apiResource('/encargados1', 'EncargadoController')->parameters(['encargados1' => 'encargado']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/carteros1', 'CarteroController')->parameters(['carteros1' => 'cartero']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/gestore1', 'GestoreController')->parameters(['gestore1' => 'gestore']);  //editar agragar eliminar listar apiresource
+    Route::apiResource('/contrato1', 'ContratosController')->parameters(['contrato1' => 'contrato']);  //editar agragar eliminar listar apiresource
 
     Route::put('/solicitudesrecojo/{solicitude}/', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega/{solicitude}/', 'SolicitudeController@markAsEntregado');

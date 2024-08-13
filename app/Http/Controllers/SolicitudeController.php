@@ -7,6 +7,7 @@ use App\Models\Solicitude;
 use App\Models\Sucursale;
 use App\Models\Tarifa;
 use Picqer\Barcode\BarcodeGeneratorPNG;
+use Intervention\Image\Facades\Image;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,15 +37,29 @@ class SolicitudeController extends Controller
      */
     public function store(Request $request)
     {
-       // Genera una nueva guía usando el sucursale_id y tarifa_id proporcionados
-    $guia = $this->generateGuia($request->sucursale_id, $request->tarifa_id)->getData()->guia;
+    // Extraer la imagen en base64 del request
+    $imageData = $request->input('imagen'); // Base64 image data
 
+    // Si existe una imagen, optimizarla
+    if ($imageData) {
+        // Optimizar la imagen usando Intervention Image
+        $img = Image::make($imageData)->resize(300, null, function ($constraint) {
+            $constraint->aspectRatio();
+        })->encode('webp', 50); // Redimensionar y comprimir en formato WebP con calidad 80%
+
+        // Convertir la imagen optimizada de vuelta a base64
+        $optimizedImage = (string) $img->encode('data-url'); // Imagen optimizada en base64 en formato WebP
+    } else {
+        $optimizedImage = null; // O manejarlo como desees si no hay imagen
+    }
+
+    // Crear una nueva instancia de Solicitude
     $solicitude = new Solicitude();
     $solicitude->cartero_recogida_id = $request->cartero_recogida_id ?? null;
     $solicitude->cartero_entrega_id = $request->cartero_entrega_id ?? null;
     $solicitude->sucursale_id = $request->sucursale_id;
     $solicitude->tarifa_id = $request->tarifa_id ?? null;
-    $solicitude->guia = $guia;
+    $solicitude->guia = $this->generateGuia($request->sucursale_id, $request->tarifa_id)->getData()->guia;
     $solicitude->peso_o = $request->peso_o;
     $solicitude->peso_v = $request->peso_v;
     $solicitude->remitente = $request->remitente;
@@ -67,17 +82,19 @@ class SolicitudeController extends Controller
     $solicitude->observacion = $request->observacion;
     $solicitude->zona_r = $request->zona_r;
     $solicitude->zona_d = $request->zona_d;
-    $solicitude->imagen = $request->imagen;
+
+    // Asignar la imagen optimizada en formato WebP al modelo
+    $solicitude->imagen = $optimizedImage;
 
     // Generar el código de barras para la guía
     $generator = new BarcodeGeneratorPNG();
-    $barcode = $generator->getBarcode($guia, $generator::TYPE_CODE_128);
-    
-    // Guardar el código de barras en la base de datos como imagen PNG
+    $barcode = $generator->getBarcode($solicitude->guia, $generator::TYPE_CODE_128);
     $solicitude->codigo_barras = base64_encode($barcode);
 
+    // Guardar la solicitud en la base de datos
     $solicitude->save();
 
+    // Devolver la respuesta con la solicitud guardada
     return $solicitude;
 
 
