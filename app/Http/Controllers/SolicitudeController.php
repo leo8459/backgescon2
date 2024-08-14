@@ -290,15 +290,17 @@ class SolicitudeController extends Controller
     }
 
     public function Rechazado(Request $request, Solicitude $solicitude)
-    {
-        try {
-            $solicitude->estado = 6;
-            $solicitude->observacion = $request->observacion; // Actualizar el peso
-            $solicitude->save();
+{
+    try {
+        $solicitude->estado = 6;
+        $solicitude->observacion = $request->observacion;
+        $solicitude->fecha_d = $request->fecha_d ?? now(); // Asigna la fecha actual si no se proporciona
+        $solicitude->save();
 
-            return response()->json(['message' => 'Solicitud marcada como verificada exitosamente.'], 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Error al marcar la solicitud como verificada.', 'exception' => $e->getMessage()], 500);
-        }
+        return response()->json(['message' => 'Solicitud marcada como rechazada exitosamente.'], 200);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Error al marcar la solicitud como rechazada.', 'exception' => $e->getMessage()], 500);
     }
+}
+
 }
