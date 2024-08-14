@@ -67,9 +67,10 @@ class DashboardController extends Controller
     }
 
     public function solicitudesEstado3(Request $request)
-    {
-        return $this->solicitudesPorEstado($request, 3);
-    }
+{
+    return $this->solicitudesPorMultiplesEstados($request, [3, 4]); // Cambiado para reconocer estado 3 y 4
+}
+
 
     public function solicitudesEstado0(Request $request)
     {

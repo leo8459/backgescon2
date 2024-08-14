@@ -36,9 +36,10 @@ class DashboardAdminController extends Controller
     }
 
     public function solicitudesEstado3()
-    {
-        return $this->solicitudesPorEstado(3);
-    }
+{
+    return $this->solicitudesPorEstados([3, 4]); // Cambiado para reconocer estado 3 y 4
+}
+
 
     public function solicitudesEstado5()
     {
@@ -80,13 +81,14 @@ class DashboardAdminController extends Controller
     public function solicitudesEstado3Hoy()
     {
         $hoy = Carbon::today()->toDateString();
-
-        $totalSolicitudes = Solicitude::where('estado', 3)
+    
+        $totalSolicitudes = Solicitude::whereIn('estado', [3, 4]) // Cambiado para reconocer estado 3 y 4
                             ->whereDate('fecha', $hoy)
                             ->count();
-
+    
         return response()->json(['total' => $totalSolicitudes]);
     }
+    
 
     public function solicitudesEstado5Hoy()
     {
@@ -117,5 +119,11 @@ class DashboardAdminController extends Controller
         $sucursales = Sucursale::where('estado', 0)->get();
         return response()->json($sucursales);
     }
-    
+    private function solicitudesPorEstados(array $estados)
+{
+    $totalSolicitudes = Solicitude::whereIn('estado', $estados)->count();
+
+    return response()->json(['total' => $totalSolicitudes]);
+}
+
 }

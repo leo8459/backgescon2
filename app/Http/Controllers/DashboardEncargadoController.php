@@ -36,8 +36,11 @@ class DashboardEncargadoController extends Controller
 
     public function solicitudesEstado3()
     {
-        return $this->solicitudesPorEstado(3);
+        $totalSolicitudes = Solicitude::whereIn('estado', [3, 4])->count(); // Cambiado para reconocer estado 3 y 4
+    
+        return response()->json(['total' => $totalSolicitudes]);
     }
+    
 
     public function solicitudesEstado5()
     {
@@ -79,13 +82,14 @@ class DashboardEncargadoController extends Controller
     public function solicitudesEstado3Hoy()
     {
         $hoy = Carbon::today()->toDateString();
-
-        $totalSolicitudes = Solicitude::where('estado', 3)
+    
+        $totalSolicitudes = Solicitude::whereIn('estado', [3, 4]) // Cambiado para reconocer estado 3 y 4
                             ->whereDate('fecha', $hoy)
                             ->count();
-
+    
         return response()->json(['total' => $totalSolicitudes]);
     }
+    
 
     public function solicitudesEstado5Hoy()
     {
