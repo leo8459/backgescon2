@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('servicio')->nullable();
             $table->string('precio')->nullable();
             $table->string('precio_extra')->nullable();
+            $table->string('provincia')->nullable();
 
             $table->foreignId('sucursale_id')->nullable()->constrained('sucursales')->onDelete('cascade');
             $table->timestamps();
