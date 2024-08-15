@@ -11,6 +11,7 @@ Route::middleware(['auth:api_gestore'])->group(function () {
     Route::apiResource('/solicitudes3', 'SolicitudeController')->parameters(['solicitudes3' => 'solicitude']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/encargados3', 'EncargadoController')->parameters(['encargados3' => 'encargado']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/carteros3', 'CarteroController')->parameters(['carteros3' => 'cartero']);  //editar agragar eliminar listar apiresource
+    Route::apiResource('/direcciones3', 'DireccioneController')->parameters(['direcciones3' => 'direccione']);  //editar agragar eliminar listar apiresource
 
     Route::put('/solicitudesrecojo3/{solicitude}/', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega3/{solicitude}/', 'SolicitudeController@markAsEntregado');
