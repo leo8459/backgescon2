@@ -26,5 +26,9 @@ class Solicitude extends Model
     {
         return $this->belongsTo(Tarifa::class);
     }
+    public function direccion()
+    {
+        return $this->belongsTo(Direccione::class, 'direccion_id');
+    }
     
 }

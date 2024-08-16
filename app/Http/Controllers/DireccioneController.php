@@ -21,6 +21,7 @@ class DireccioneController extends Controller
     public function store(Request $request)
     {
         $direccione = new Direccione();
+        $direccione->nombre = $request->nombre;
         $direccione->direccion = $request->direccion;
         $direccione->direccion_especifica = $request->direccion_especifica;
         $direccione->zona = $request->zona;
@@ -45,7 +46,7 @@ class DireccioneController extends Controller
      */
     public function update(Request $request, Direccione $direccione)
     {
-        
+        $direccione->nombre = $request->nombre;
         $direccione->direccion = $request->direccion;
         $direccione->direccion_especifica = $request->direccion_especifica;
         $direccione->zona = $request->zona;

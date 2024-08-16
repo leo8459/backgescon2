@@ -11,6 +11,7 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
     Route::apiResource('/solicitudes2', 'SolicitudeController')->parameters(['solicitudes2' => 'solicitude']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/encargados2', 'EncargadoController')->parameters(['encargados2' => 'encargado']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/carteros2', 'CarteroController')->parameters(['carteros2' => 'cartero']);  //editar agragar eliminar listar apiresource
+    Route::apiResource('/direcciones2', 'DireccioneController')->parameters(['direcciones2' => 'direccione']);  //editar agragar eliminar listar apiresource
 
 
 
@@ -38,6 +39,10 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
     Route::get('/solicitudes-estado-0', 'DashboardController@solicitudesEstado0');
 
     Route::get('/solicitudes/buscar-por-codigo-barras', 'SolicitudeController@buscarPorCodigoBarras');
+    Route::get('/direcciones', 'SolicitudeController@getDirecciones');
+
+
+
 
     // TODOS LOS POST
     Route::post('/solicitudes/generar-codigo-barras', 'SolicitudeController@generateBarcode');

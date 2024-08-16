@@ -1,2 +1,2 @@
-php artisan migrate --path=/database/migrations/2024_06_07_135921_create_solicitudes_table.php
+php artisan migrate --path=/database/migrations/2024_08_15_101914_create_direcciones_table.php
 2024_06_07_135921_create_solicitudes_table

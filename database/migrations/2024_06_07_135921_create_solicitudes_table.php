@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignId('tarifa_id')->nullable()->constrained('tarifas')->onDelete('cascade');
             $table->foreignId('cartero_recogida_id')->nullable()->constrained('carteros');
             $table->foreignId('cartero_entrega_id')->nullable()->constrained('carteros');
+            $table->foreignId('direccion_id')->nullable()->constrained('direcciones');
             $table->string('guia')->nullable();
             $table->text('codigo_barras')->nullable(); // Almacena la imagen del código de barras
             $table->string('peso_o')->nullable();
