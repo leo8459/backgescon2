@@ -13,6 +13,7 @@ Route::middleware(['auth:api_cartero'])->group(function () {
     Route::put('/solicitudesrecojo/{solicitude}', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega/{solicitude}', 'SolicitudeController@markAsEntregado');
     Route::put('/marcarrecogido/{solicitude}', 'SolicitudeController@marcarRecogido');
+    Route::put('/rechazado/{solicitude}', 'SolicitudeController@Rechazado');
 
 
     Route::get('/getTarifas', 'SolicitudeController@getTarifas');
