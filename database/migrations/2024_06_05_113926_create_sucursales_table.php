@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password');
             $table->string('origen')->nullable();
+            $table->string('acuerdo_contrato')->nullable();
+            $table->string('tipo_contrato')->nullable();
             $table->string('fin_vigencia')->nullable();
             $table->string('limite')->nullable();
             $table->string('cobertura')->nullable();

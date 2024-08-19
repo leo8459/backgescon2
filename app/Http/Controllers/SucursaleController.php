@@ -37,28 +37,35 @@ class SucursaleController extends Controller
      */
     public function store(Request $request)
     {
-         $sucursale = new sucursale();
-         $sucursale->nombre = $request->nombre;
-         $sucursale->origen = $request->origen;
-         $sucursale->fin_vigencia = $request->fin_vigencia;
-         $sucursale->limite = $request->limite;
-         $sucursale->cobertura = $request->cobertura;
-         $sucursale->ini_vigencia = $request->ini_vigencia;
-         $sucursale->direccion = $request->direccion;
-         $sucursale->contacto_administrativo = $request->contacto_administrativo;
-         $sucursale->acuerdos = $request->acuerdos;
-         $sucursale->codigo_cliente = $request->codigo_cliente;
-         $sucursale->n_contrato = $request->n_contrato;
-         $sucursale->empresa_id = $request->empresa_id;
-         $sucursale->password = Hash::make($request->input('password'));
-         $sucursale->email = $request->email;
-
-
-         $sucursale->save();
-     
-         return $sucursale;
+        // Obtener el último código de cliente y generar el siguiente
+        $ultimoCodigo = Sucursale::max(DB::raw('CAST(codigo_cliente AS INTEGER)'));
+        $nuevoCodigo = str_pad($ultimoCodigo + 1, 4, '0', STR_PAD_LEFT);
+    
+        // Crear una nueva sucursal con los datos recibidos
+        $sucursale = new Sucursale();
+        $sucursale->nombre = $request->nombre;
+        $sucursale->origen = $request->origen;
+        $sucursale->fin_vigencia = $request->fin_vigencia;
+        $sucursale->limite = $request->limite;
+        $sucursale->cobertura = $request->cobertura;
+        $sucursale->ini_vigencia = $request->ini_vigencia;
+        $sucursale->direccion = $request->direccion;
+        $sucursale->contacto_administrativo = $request->contacto_administrativo;
+        $sucursale->acuerdos = $request->acuerdos;
+        $sucursale->codigo_cliente = $nuevoCodigo;
+        $sucursale->n_contrato = $request->n_contrato;
+        $sucursale->empresa_id = $request->empresa_id;
+        $sucursale->password = Hash::make($request->input('password'));
+        $sucursale->email = $request->email;
+        $sucursale->acuerdo_contrato = $request->acuerdo_contrato;
+        $sucursale->tipo_contrato = $request->tipo_contrato;
+    
+        $sucursale->save();
+        
+        return $sucursale;
     }
-
+    
+    
     /**
      * Display the specified resource.
      *
@@ -94,7 +101,8 @@ class SucursaleController extends Controller
         $sucursale->contacto_administrativo = $request->contacto_administrativo;
         $sucursale->save();
         $sucursale->email = $request->email;
-
+        $sucursale->acuerdo_contrato = $request->acuerdo_contrato;
+        $sucursale->tipo_contrato = $request->tipo_contrato;
         if(isset($request->password)){
             if(!empty($request->password)){
                 $sucursale->password = Hash::make($request->password);

@@ -65,8 +65,6 @@ class SolicitudeController extends Controller
     $solicitude->peso_o = $request->peso_o;
     $solicitude->peso_v = $request->peso_v;
     $solicitude->remitente = $request->remitente;
-    $solicitude->direccion = $request->direccion;
-    $solicitude->direccion_especifica = $request->direccion_especifica;
     $solicitude->telefono = $request->telefono;
     $solicitude->contenido = $request->contenido;
     $solicitude->fecha = $request->fecha;
@@ -78,13 +76,12 @@ class SolicitudeController extends Controller
     $solicitude->ciudad = $request->ciudad;
     $solicitude->firma_d = $request->firma_d;
     $solicitude->nombre_d = $request->nombre_d;
-    $solicitude->ci_d = $request->ci_d;
     $solicitude->fecha_d = $request->fecha_d;
     $solicitude->estado = $request->estado ?? 1;
     $solicitude->observacion = $request->observacion;
-    $solicitude->zona_r = $request->zona_r;
     $solicitude->zona_d = $request->zona_d;
-
+    $solicitude->justificacion = $request->justificacion;
+    $solicitude->imagen_justificacion = $request->imagen_justificacion;
     // Asignar la imagen optimizada en formato WebP al modelo
     $solicitude->imagen = $optimizedImage;
 
@@ -144,8 +141,6 @@ class SolicitudeController extends Controller
         $solicitude->peso_o = $request->peso_o;
         $solicitude->peso_v = $request->peso_v;
         $solicitude->remitente = $request->remitente;
-        $solicitude->direccion = $request->direccion;
-        $solicitude->direccion_especifica = $request->direccion_especifica;
         $solicitude->telefono = $request->telefono;
         $solicitude->contenido = $request->contenido;
         $solicitude->fecha = $request->fecha;
@@ -157,13 +152,12 @@ class SolicitudeController extends Controller
         $solicitude->ciudad = $request->ciudad;
         $solicitude->firma_d = $request->firma_d;
         $solicitude->nombre_d = $request->nombre_d;
-        $solicitude->ci_d = $request->ci_d;
         $solicitude->fecha_d = $request->fecha_d;
         $solicitude->estado = $request->estado;
         $solicitude->observacion = $request->observacion;
-        $solicitude->zona_r = $request->zona_r;
         $solicitude->zona_d = $request->zona_d;
-
+        $solicitude->justificacion = $request->justificacion;
+        $solicitude->imagen_justificacion = $request->imagen_justificacion;
         $solicitude->imagen = $request->imagen;
 
 
