@@ -20,6 +20,8 @@ return new class extends Migration
             $table->foreignId('cartero_recogida_id')->nullable()->constrained('carteros');
             $table->foreignId('cartero_entrega_id')->nullable()->constrained('carteros');
             $table->foreignId('direccion_id')->nullable()->constrained('direcciones');
+            $table->string('fecha_recojo_c')->nullable();
+            $table->string('fecha_devolucion')->nullable();
             $table->string('guia')->nullable();
             $table->text('codigo_barras')->nullable(); // Almacena la imagen del código de barras
             $table->string('peso_o')->nullable();
@@ -36,6 +38,8 @@ return new class extends Migration
             $table->string('ciudad')->nullable();
             $table->string('nombre_d')->nullable();
             $table->string('fecha_d')->nullable();
+            $table->text('imagen_devolucion')->nullable();
+
             $table->integer('estado')->default(1);
             $table->string('observacion')->nullable();
             $table->string('justificacion')->nullable();
