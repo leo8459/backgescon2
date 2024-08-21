@@ -21,7 +21,18 @@ class SolicitudeController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-
+    protected function optimizeImage($imageData)
+    {
+        if ($imageData) {
+            return (string) Image::make($imageData)
+                ->resize(300, null, function ($constraint) {
+                    $constraint->aspectRatio();
+                })
+                ->encode('webp', 50)
+                ->encode('data-url');
+        }
+        return null;
+    }
     public function index()
     {
         $solicitudes = Solicitude::with(['carteroRecogida', 'carteroEntrega', 'sucursale', 'tarifa', 'direccion'])->get();
@@ -222,6 +233,7 @@ class SolicitudeController extends Controller
 
             // Guarda los cambios
             $solicitude->save();
+            return response()->json($solicitude);
 
             return response()->json(['message' => 'Solicitud marcada como recogida exitosamente.'], 200);
         } catch (\Exception $e) {
@@ -274,6 +286,7 @@ class SolicitudeController extends Controller
         try {
             $solicitude->estado = 4;
             $solicitude->save();
+            return response()->json($solicitude);
 
             return response()->json(['message' => 'Solicitud marcada como verificada exitosamente.'], 200);
         } catch (\Exception $e) {
@@ -282,18 +295,24 @@ class SolicitudeController extends Controller
     }
 
     public function Rechazado(Request $request, Solicitude $solicitude)
-    {
-        try {
-            $solicitude->estado = 6;
-            $solicitude->observacion = $request->observacion;
-            $solicitude->fecha_d = $request->fecha_d ?? now(); // Asigna la fecha actual si no se proporciona
-            $solicitude->save();
+{
+    try {
+        // Optimizar la imagen utilizando el método optimizeImage
 
-            return response()->json(['message' => 'Solicitud marcada como rechazada exitosamente.'], 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Error al marcar la solicitud como rechazada.', 'exception' => $e->getMessage()], 500);
-        }
+        // Asignar los valores al modelo
+        $solicitude->estado = 6;
+        $solicitude->observacion = $request->observacion;
+        $solicitude->fecha_d = $request->fecha_d ?? now(); // Asigna la fecha actual si no se proporciona
+        $solicitude->imagen = $request->imagen;
+        $solicitude->save();
+        return response()->json($solicitude);
+
+        return response()->json(['message' => 'Solicitud marcada como rechazada exitosamente.'], 200);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Error al marcar la solicitud como rechazada.', 'exception' => $e->getMessage()], 500);
     }
+}
+
     public function Devolucion(Request $request, Solicitude $solicitude)
     {
         try {
@@ -301,6 +320,7 @@ class SolicitudeController extends Controller
             $solicitude->fecha_devolucion = $request->fecha_devolucion ?? now(); // Asigna la fecha actual si no se proporciona
             $solicitude->imagen_devolucion = $request->imagen_devolucion;
             $solicitude->save();
+            return response()->json($solicitude);
 
             return response()->json(['message' => 'Solicitud marcada como rechazada exitosamente.'], 200);
         } catch (\Exception $e) {
