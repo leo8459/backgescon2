@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DetalleSolicitude;
 use App\Models\Solicitude;
 use App\Models\Sucursale;
+use App\Models\encargado;
 use App\Models\Tarifa;
 use App\Models\Direccione;
 use Picqer\Barcode\BarcodeGeneratorPNG;
@@ -16,11 +17,6 @@ use Illuminate\Support\Facades\Log;
 
 class SolicitudeController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     protected function optimizeImage($imageData)
     {
         if ($imageData) {
@@ -35,18 +31,11 @@ class SolicitudeController extends Controller
     }
     public function index()
     {
-        $solicitudes = Solicitude::with(['carteroRecogida', 'carteroEntrega', 'sucursale', 'tarifa', 'direccion'])->get();
+        $solicitudes = Solicitude::with(['carteroRecogida', 'carteroEntrega', 'sucursale', 'tarifa', 'direccion', 'encargado'])->get();
         return response()->json($solicitudes);
     }
 
 
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
         // Extraer la imagen en base64 del request
@@ -69,6 +58,7 @@ class SolicitudeController extends Controller
         $solicitude = new Solicitude();
         $solicitude->cartero_recogida_id = $request->cartero_recogida_id ?? null;
         $solicitude->cartero_entrega_id = $request->cartero_entrega_id ?? null;
+        $solicitude->encargado_id = $request->encargado_id ?? null;
         $solicitude->sucursale_id = $request->sucursale_id;
         $solicitude->tarifa_id = $request->tarifa_id ?? null;
         $solicitude->direccion_id = $request->direccion_id ?? null;
@@ -98,11 +88,13 @@ class SolicitudeController extends Controller
         // Asignar la imagen optimizada en formato WebP al modelo
         $solicitude->imagen = $optimizedImage;
         $solicitude->imagen_devolucion = $request->imagen_devolucion;
+        $solicitude->peso_r = $request->peso_r ; // Asigna la fecha actual si no se proporciona
 
         // Generar el código de barras para la guía
         $generator = new BarcodeGeneratorPNG();
         $barcode = $generator->getBarcode($solicitude->guia, $generator::TYPE_CODE_128);
         $solicitude->codigo_barras = base64_encode($barcode);
+        $solicitude->fecha_envio_regional = $request->fecha_envio_regional ; // Asigna la fecha actual si no se proporciona
 
         // Guardar la solicitud en la base de datos
         $solicitude->save();
@@ -113,18 +105,6 @@ class SolicitudeController extends Controller
 
 
 
-
-
-
-
-
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Solicitude  $solicitude
-     * @return \Illuminate\Http\Response
-     */
     public function show(Solicitude $solicitude)
     {
         $solicitude->sucursale = $solicitude->sucursale;
@@ -132,13 +112,6 @@ class SolicitudeController extends Controller
         return $solicitude;
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Solicitude  $solicitude
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, Solicitude $solicitude)
     {
         $solicitude->tarifa_id = $request->tarifa_id ?? null;
@@ -146,7 +119,7 @@ class SolicitudeController extends Controller
         $solicitude->cartero_recogida_id = $request->cartero_recogida_id ?? null;
         $solicitude->cartero_entrega_id = $request->cartero_entrega_id ?? null;
         $solicitude->direccion_id = $request->direccion_id ?? null;
-
+        $solicitude->encargado_id = $request->encargado_id ?? null;
         $solicitude->guia = $request->guia;
         $solicitude->peso_o = $request->peso_o;
         $solicitude->peso_v = $request->peso_v;
@@ -172,6 +145,8 @@ class SolicitudeController extends Controller
         $solicitude->fecha_recojo_c = $request->fecha_recojo_c;
         $solicitude->fecha_devolucion = $request->fecha_devolucion;
         $solicitude->imagen_devolucion = $request->imagen_devolucion;
+        $solicitude->fecha_envio_regional = $request->fecha_envio_regional ; // Asigna la fecha actual si no se proporciona
+        $solicitude->peso_r = $request->peso_r ; // Asigna la fecha actual si no se proporciona
 
         
 
@@ -182,14 +157,6 @@ class SolicitudeController extends Controller
         return $solicitude;
     }
 
-
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Solicitude  $solicitude
-     * @return \Illuminate\Http\Response
-     */
     public function destroy(Solicitude $solicitude)
     {
         try {
@@ -220,6 +187,7 @@ class SolicitudeController extends Controller
 
         return response()->json($solicitude);
     }
+
     public function marcarRecogido(Request $request, $id)
     {
         try {
@@ -240,8 +208,6 @@ class SolicitudeController extends Controller
             return response()->json(['error' => 'Error al marcar la solicitud como recogida.'], 500);
         }
     }
-    // En tu controlador
-
 
     public function generateGuia($sucursaleId, $tarifaId)
     {
@@ -295,23 +261,23 @@ class SolicitudeController extends Controller
     }
 
     public function Rechazado(Request $request, Solicitude $solicitude)
-{
-    try {
-        // Optimizar la imagen utilizando el método optimizeImage
+    {
+        try {
+            // Optimizar la imagen utilizando el método optimizeImage
 
-        // Asignar los valores al modelo
-        $solicitude->estado = 6;
-        $solicitude->observacion = $request->observacion;
-        $solicitude->fecha_d = $request->fecha_d ?? now(); // Asigna la fecha actual si no se proporciona
-        $solicitude->imagen = $request->imagen;
-        $solicitude->save();
-        return response()->json($solicitude);
+            // Asignar los valores al modelo
+            $solicitude->estado = 6;
+            $solicitude->observacion = $request->observacion;
+            $solicitude->fecha_d = $request->fecha_d ?? now(); // Asigna la fecha actual si no se proporciona
+            $solicitude->imagen = $request->imagen;
+            $solicitude->save();
+            return response()->json($solicitude);
 
-        return response()->json(['message' => 'Solicitud marcada como rechazada exitosamente.'], 200);
-    } catch (\Exception $e) {
-        return response()->json(['error' => 'Error al marcar la solicitud como rechazada.', 'exception' => $e->getMessage()], 500);
+            return response()->json(['message' => 'Solicitud marcada como rechazada exitosamente.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al marcar la solicitud como rechazada.', 'exception' => $e->getMessage()], 500);
+        }
     }
-}
 
     public function Devolucion(Request $request, Solicitude $solicitude)
     {
@@ -319,6 +285,37 @@ class SolicitudeController extends Controller
             $solicitude->estado = 7;
             $solicitude->fecha_devolucion = $request->fecha_devolucion ?? now(); // Asigna la fecha actual si no se proporciona
             $solicitude->imagen_devolucion = $request->imagen_devolucion;
+            $solicitude->save();
+            return response()->json($solicitude);
+
+            return response()->json(['message' => 'Solicitud marcada como rechazada exitosamente.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al marcar la solicitud como rechazada.', 'exception' => $e->getMessage()], 500);
+        }
+    }
+    public function MandarRegional(Request $request, Solicitude $solicitude)
+    {
+        try {
+            $solicitude->estado = 8;
+            $solicitude->fecha_envio_regional = $request->fecha_envio_regional ?? now(); // Asigna la fecha actual si no se proporciona
+            $solicitude->encargado_id = $request->encargado_id; // Asignar el cartero de entrega
+            $solicitude->peso_v = $request->peso_v; // Actualizar el peso
+            $solicitude->nombre_d = $request->nombre_d; // Actualizar el peso
+            $solicitude->save();
+            return response()->json($solicitude);
+
+            return response()->json(['message' => 'Solicitud marcada como rechazada exitosamente.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al marcar la solicitud como rechazada.', 'exception' => $e->getMessage()], 500);
+        }
+    }
+    public function EnCaminoRegional(Request $request, Solicitude $solicitude)
+    {
+        try {
+            $solicitude->estado = 9;
+            $solicitude->cartero_entrega_id = $request->cartero_entrega_id; // Asignar el cartero de entrega
+            $solicitude->peso_r = $request->peso_r; // Actualizar el peso
+            $solicitude->nombre_d = $request->nombre_d; // Actualizar el peso
             $solicitude->save();
             return response()->json($solicitude);
 
@@ -351,4 +348,10 @@ class SolicitudeController extends Controller
         }
         return response()->json($direcciones);
     }
+
+
+
+
+
+
 }

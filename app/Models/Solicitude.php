@@ -30,5 +30,8 @@ class Solicitude extends Model
     {
         return $this->belongsTo(Direccione::class, 'direccion_id');
     }
-    
+    public function encargado()
+    {
+        return $this->belongsTo(encargado::class, 'encargado_id');
+    }
 }
