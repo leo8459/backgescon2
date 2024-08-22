@@ -39,7 +39,7 @@ class CarteroController extends Controller
         $cartero->nombre = $request->nombre;
         $cartero->apellidos = $request->apellidos;
         $cartero->email = $request->email;
-        $cartero->zona = $request->zona;
+        $cartero->departamento_cartero = $request->departamento_cartero;
 
         $cartero->password = Hash::make($request->input('password'));
 
@@ -71,7 +71,7 @@ class CarteroController extends Controller
         $cartero->nombre = $request->nombre;
         $cartero->apellidos = $request->apellidos;
         $cartero->email = $request->email;
-        $cartero->zona = $request->zona;
+        $cartero->departamento_cartero = $request->departamento_cartero;
 
         $cartero->password = Hash::make($request->input('password'));
 

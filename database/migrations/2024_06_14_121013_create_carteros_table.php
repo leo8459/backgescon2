@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->string('nombre')->nullable();
             $table->string('apellidos')->nullable();
-            $table->string('zona')->nullable();
+            $table->string('departamento_cartero')->nullable();
             $table->string('email')->unique();
             $table->string('password');
             $table->integer('estado')->default(1);
