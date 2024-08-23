@@ -29,7 +29,7 @@ return new class extends Migration
             $table->string('contacto_administrativo')->nullable();
             $table->string('acuerdos')->nullable();
             $table->string('codigo_cliente')->unique();
-            $table->string('n_contrato')->unique();
+            $table->string('n_contrato')->nullable();
             $table->integer('estado')->default(1);
             
             $table->foreignId('empresa_id')->nullable()->constrained('empresas');
