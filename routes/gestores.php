@@ -2,6 +2,7 @@
 
 
 use Illuminate\Support\Facades\Route;
+Route::post('/login', 'AdministradorController@login'); // Login de Cartero
 
 Route::middleware(['auth:api_gestore'])->group(function () {
     Route::apiResource('/users3', 'UserController')->parameters(['users3' => 'user']);
@@ -23,4 +24,3 @@ Route::middleware(['auth:api_gestore'])->group(function () {
     Route::get('/GsucursalesSinContrato', 'DashboardGestorController@sucursalesSinContrato');
     Route::get('/GtotalNombreD', 'DashboardGestorController@totalNombreD');
 });
-Route::post('/login4', 'GestoreController@login');

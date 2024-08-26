@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+Route::post('/login', 'AdministradorController@login'); // Login de Cartero
 
 Route::middleware(['auth:api_cartero'])->group(function () {
     Route::apiResource('/carteros', 'CarteroController');
@@ -34,6 +35,5 @@ Route::middleware(['auth:api_cartero'])->group(function () {
     Route::get('/Csolicitudes-estado-5-hoy', 'DashboardCarteroController@solicitudesEstado5Hoy');
 });
 
-Route::post('/login3', 'CarteroController@login3'); // Login de Cartero
 
 

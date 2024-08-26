@@ -2,7 +2,7 @@
 
 
 use Illuminate\Support\Facades\Route;
-
+Route::post('/login', 'UserController@login');
 Route::middleware(['auth:api_admin'])->group(function () { 
     Route::apiResource('/users1', 'UserController')->parameters(['users1' => 'user']);
     Route::apiResource('/empresas1', 'EmpresaController')->parameters(['empresas1' => 'empresa']);  //editar agragar eliminar listar apiresource
@@ -36,4 +36,4 @@ Route::middleware(['auth:api_admin'])->group(function () {
     Route::get('/Asucursales-con-contrato', 'DashboardAdminController@sucursalesConContrato');
     Route::get('/Asucursales-sin-contrato', 'DashboardAdminController@sucursalesSinContrato');
 });
-Route::post('/login', 'UserController@login');
+

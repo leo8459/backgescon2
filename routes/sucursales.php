@@ -2,6 +2,7 @@
 
 
 use Illuminate\Support\Facades\Route;
+Route::post('/login', 'AdministradorController@login'); // Login de Cartero
 
 Route::middleware(['auth:api_sucursal'])->group(function () {
     Route::apiResource('/users2', 'UserController')->parameters(['users2' => 'user']);
