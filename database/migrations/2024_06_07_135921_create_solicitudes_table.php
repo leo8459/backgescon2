@@ -21,6 +21,7 @@ return new class extends Migration
             $table->foreignId('cartero_entrega_id')->nullable()->constrained('carteros');
             $table->foreignId('direccion_id')->nullable()->constrained('direcciones');
             $table->foreignId('encargado_id')->nullable()->constrained('encargados');
+            $table->foreignId('encargado_regional_id')->nullable()->constrained('encargados');
 
             $table->string('guia')->nullable();
             $table->integer('estado')->default(1);

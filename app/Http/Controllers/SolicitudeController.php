@@ -31,7 +31,7 @@ class SolicitudeController extends Controller
     }
     public function index()
     {
-        $solicitudes = Solicitude::with(['carteroRecogida', 'carteroEntrega', 'sucursale', 'tarifa', 'direccion', 'encargado'])->get();
+        $solicitudes = Solicitude::with(['carteroRecogida', 'carteroEntrega', 'sucursale', 'tarifa', 'direccion', 'encargado', 'encargadoregional'])->get();
         return response()->json($solicitudes);
     }
 
@@ -88,7 +88,8 @@ class SolicitudeController extends Controller
         $solicitude->zona_d = $request->zona_d;
         $solicitude->justificacion = $request->justificacion;
         $solicitude->imagen_justificacion = $request->imagen_justificacion;
-    
+        $solicitude->encargado_regional_id = $request->encargado_regional_id; // Asignar el cartero de entrega
+
         // Asignar la imagen optimizada en formato WebP al modelo
         $solicitude->imagen = $optimizedImage;
         $solicitude->imagen_devolucion = $request->imagen_devolucion;
@@ -152,6 +153,7 @@ class SolicitudeController extends Controller
         $solicitude->imagen_devolucion = $request->imagen_devolucion;
         $solicitude->fecha_envio_regional = $request->fecha_envio_regional ; // Asigna la fecha actual si no se proporciona
         $solicitude->peso_r = $request->peso_r ; // Asigna la fecha actual si no se proporciona
+        $solicitude->encargado_regional_id = $request->encargado_regional_id; // Asignar el cartero de entrega
 
         
 
@@ -172,7 +174,29 @@ class SolicitudeController extends Controller
             return response()->json(['message' => 'Error al actualizar la solicitud.', 'error' => $e->getMessage()], 500);
         }
     }
+    public function getTarifas(Request $request)
+    {
+        $sucursaleId = $request->query('sucursale_id');
+        if ($sucursaleId) {
+            $tarifas = Tarifa::where('sucursale_id', $sucursaleId)->get();
+        } else {
+            $tarifas = Tarifa::all(); // O manejar el caso donde no se proporcione sucursale_id
+        }
+        return response()->json($tarifas);
+    }
 
+    public function getDirecciones(Request $request)
+    {
+        $sucursaleId = $request->query('sucursale_id');
+        if ($sucursaleId) {
+            // Recupera las direcciones asociadas a la sucursal proporcionada
+            $direcciones = Direccione::where('sucursale_id', $sucursaleId)->get();
+        } else {
+            // Maneja el caso donde no se proporcione sucursale_id
+            $direcciones = Direccione::all();
+        }
+        return response()->json($direcciones);
+    }
     public function markAsEnCamino(Request $request, Solicitude $solicitude)
     {
         $solicitude->estado = 2; // Cambiar estado a "En camino"
@@ -314,6 +338,16 @@ class SolicitudeController extends Controller
             return response()->json(['error' => 'Error al marcar la solicitud como rechazada.', 'exception' => $e->getMessage()], 500);
         }
     }
+    public function RecibirPaquete(Request $request, Solicitude $solicitude)
+    {
+         
+            $solicitude->estado = 10;
+            $solicitude->encargado_regional_id = $request->encargado_regional_id; // Asignar el cartero de entrega
+            $solicitude->save();
+            return response()->json($solicitude);
+
+        
+    }
     public function EnCaminoRegional(Request $request, Solicitude $solicitude)
     {
         try {
@@ -330,29 +364,7 @@ class SolicitudeController extends Controller
         }
     }
 
-    public function getTarifas(Request $request)
-    {
-        $sucursaleId = $request->query('sucursale_id');
-        if ($sucursaleId) {
-            $tarifas = Tarifa::where('sucursale_id', $sucursaleId)->get();
-        } else {
-            $tarifas = Tarifa::all(); // O manejar el caso donde no se proporcione sucursale_id
-        }
-        return response()->json($tarifas);
-    }
-
-    public function getDirecciones(Request $request)
-    {
-        $sucursaleId = $request->query('sucursale_id');
-        if ($sucursaleId) {
-            // Recupera las direcciones asociadas a la sucursal proporcionada
-            $direcciones = Direccione::where('sucursale_id', $sucursaleId)->get();
-        } else {
-            // Maneja el caso donde no se proporcione sucursale_id
-            $direcciones = Direccione::all();
-        }
-        return response()->json($direcciones);
-    }
+    
 
 
 

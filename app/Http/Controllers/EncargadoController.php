@@ -38,6 +38,7 @@ class EncargadoController extends Controller
          $encargado->apellidos = $request->apellidos;
          $encargado->email = $request->email;
          $encargado->estado = $request->estado ?? 1;
+         $encargado->departamento = $request->departamento;
 
          $encargado->password = Hash::make($request->input('password'));
      
@@ -71,6 +72,7 @@ class EncargadoController extends Controller
         $encargado->apellidos = $request->apellidos;
         $encargado->email = $request->email;
         $encargado->estado = $request->estado ?? 1;
+        $encargado->departamento = $request->departamento;
 
         $encargado->password = Hash::make($request->input('password'));
     
