@@ -89,7 +89,7 @@ class SolicitudeController extends Controller
         $solicitude->justificacion = $request->justificacion;
         $solicitude->imagen_justificacion = $request->imagen_justificacion;
         $solicitude->encargado_regional_id = $request->encargado_regional_id; // Asignar el cartero de entrega
-
+    
         // Asignar la imagen optimizada en formato WebP al modelo
         $solicitude->imagen = $optimizedImage;
         $solicitude->imagen_devolucion = $request->imagen_devolucion;
@@ -104,10 +104,16 @@ class SolicitudeController extends Controller
         // Guardar la solicitud en la base de datos
         $solicitude->save();
     
-        // Devolver la respuesta con la solicitud guardada
+        // Cargar la relación de sucursale antes de devolver la respuesta
+        $solicitude->load('sucursale');
+        $solicitude->load('direccion');
+        $solicitude->load('tarifa');
+
+        // Devolver la respuesta con la solicitud guardada, incluyendo la relación cargada
         return $solicitude;
     }
     
+
 
 
 
