@@ -70,6 +70,10 @@ class RouteServiceProvider extends ServiceProvider
             ->middleware('contratos')
             ->namespace($this->controllers)
             ->group(base_path('routes/contratos.php'));
+            Route::prefix('empresas')
+            ->middleware('empresas')
+            ->namespace($this->controllers)
+            ->group(base_path('routes/empresas.php'));
       });
    }
 

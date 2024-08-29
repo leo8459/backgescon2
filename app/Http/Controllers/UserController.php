@@ -117,7 +117,9 @@ class UserController extends Controller
             'api_sucursal' => 'sucursal',
             'api_gestore' => 'Gestore',
             'api_encargado' => 'encargado',
-            'api_contratos' => 'contratos'
+            'api_contratos' => 'contratos',
+            'api_empresas' => 'empresas'
+
         ];
 
         foreach ($guards as $guard => $userType) {

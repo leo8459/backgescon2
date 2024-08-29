@@ -56,6 +56,14 @@ return [
          'driver' => 'jwt',
          'provider' => 'contratos',
       ],
+      'empresas' => [
+         'driver' => 'session',
+         'provider' => 'empresas',
+      ],
+      'api_empresas' => [
+         'driver' => 'jwt',
+         'provider' => 'empresas',
+      ],
    ],
 
    'providers' => [
@@ -82,6 +90,10 @@ return [
       'contratos' => [
          'driver' => 'eloquent',
          'model' => App\Models\Contratos::class,
+      ],
+      'empresas' => [
+         'driver' => 'eloquent',
+         'model' => App\Models\empresa::class,
       ],
    ],
 
@@ -118,6 +130,12 @@ return [
       ],
       'contratos' => [
          'provider' => 'contratos',
+         'table' => 'password_resets',
+         'expire' => 60,
+         'throttle' => 60,
+      ],
+      'empresas' => [
+         'provider' => 'empresas',
          'table' => 'password_resets',
          'expire' => 60,
          'throttle' => 60,
