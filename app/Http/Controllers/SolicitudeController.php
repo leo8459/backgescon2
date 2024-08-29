@@ -294,14 +294,25 @@ class SolicitudeController extends Controller
             return response()->json(['error' => 'Error al marcar la solicitud como verificada.', 'exception' => $e->getMessage()], 500);
         }
     }
+    public function returnverificar(Request $request, Solicitude $solicitude)
+    {
+        try {
+            $solicitude->estado = 6;
+            $solicitude->save();
+            return response()->json($solicitude);
 
+            return response()->json(['message' => 'Solicitud marcada como verificada exitosamente.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al marcar la solicitud como verificada.', 'exception' => $e->getMessage()], 500);
+        }
+    }
     public function Rechazado(Request $request, Solicitude $solicitude)
     {
         try {
             // Optimizar la imagen utilizando el método optimizeImage
 
             // Asignar los valores al modelo
-            $solicitude->estado = 6;
+            $solicitude->estado = 11;
             $solicitude->observacion = $request->observacion;
             $solicitude->fecha_d = $request->fecha_d ?? now(); // Asigna la fecha actual si no se proporciona
             $solicitude->imagen = $request->imagen;

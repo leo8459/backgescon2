@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('precio')->nullable();
             $table->string('precio_extra')->nullable();
             $table->string('retencion')->nullable();
+            $table->integer('descuento')->nullable();
             $table->string('dias_entrega')->nullable(); // Nueva columna para fecha y hora de entrega
 
             $table->foreignId('sucursale_id')->nullable()->constrained('sucursales')->onDelete('cascade');
