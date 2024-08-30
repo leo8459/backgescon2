@@ -18,6 +18,7 @@ Route::middleware(['auth:api_cartero'])->group(function () {
     Route::put('/devolucion/{solicitude}', 'SolicitudeController@Devolucion');
     Route::put('/encaminoregional/{solicitude}', 'SolicitudeController@EnCaminoRegional');
 
+    Route::get('/getTarifas', 'SolicitudeController@getTarifas');
 
     Route::get('/CtotalNombreD', 'DashboardController@totalNombreD');
     Route::get('/Ctodas-solicitudes', 'DashboardController@todasSolicitudes');
