@@ -120,7 +120,8 @@ class SucursaleController extends Controller
      */
     public function destroy(Sucursale $sucursale)
     {
-        $sucursale->delete();
+        $sucursale->estado = 0;
+        $sucursale->save();
         return $sucursale;
     }
     public function login2(Request $request)
