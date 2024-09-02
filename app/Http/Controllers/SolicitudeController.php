@@ -10,6 +10,7 @@ use App\Models\Tarifa;
 use App\Models\Direccione;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\DB;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -381,7 +382,61 @@ class SolicitudeController extends Controller
         }
     }
 
+    public function obtenerSaldoRestante($sucursale_id)
+    {
+        $sucursal = Sucursale::find($sucursale_id);
     
+        if (!$sucursal) {
+            return response()->json(['error' => 'Sucursal no encontrada.'], 404);
+        }
+    
+        $saldoRestante = DB::table('sucursales')
+            ->leftJoin('solicitudes', 'sucursales.id', '=', 'solicitudes.sucursale_id')
+            ->where('sucursales.id', $sucursale_id)
+            ->select(DB::raw('sucursales.limite::numeric - COALESCE(SUM(solicitudes.nombre_d::numeric), 0) AS saldo_restante'))
+            ->groupBy('sucursales.limite')
+            ->first();
+    
+        return response()->json([
+            'sucursal' => $sucursal->nombre,
+            'saldo_restante' => $saldoRestante ? $saldoRestante->saldo_restante : $sucursal->limite,
+            'limite_total' => $sucursal->limite // Asegúrate de devolver el límite total
+        ]);
+    }
+    public function obtenerSaldoRestanteTodasSucursales()
+    {
+        // Obtener todas las sucursales
+        $sucursales = Sucursale::all();
+    
+        // Crear una colección para almacenar los resultados
+        $resultados = [];
+    
+        foreach ($sucursales as $sucursal) {
+            $saldoRestante = DB::table('sucursales')
+                ->leftJoin('solicitudes', 'sucursales.id', '=', 'solicitudes.sucursale_id')
+                ->where('sucursales.id', $sucursal->id)
+                ->select(DB::raw('sucursales.limite::numeric - COALESCE(SUM(solicitudes.nombre_d::numeric), 0) AS saldo_restante'))
+                ->groupBy('sucursales.limite')
+                ->first();
+    
+            // Calcular el 10% del límite total
+            $diezPorCiento = $sucursal->limite * 0.1;
+    
+            // Añadir la sucursal a los resultados solo si su saldo restante es menor al 10% del límite
+            if ($saldoRestante->saldo_restante < $diezPorCiento) {
+                $resultados[] = [
+                    'sucursal' => $sucursal->nombre,
+                    'saldo_restante' => $saldoRestante ? $saldoRestante->saldo_restante : $sucursal->limite,
+                    'limite_total' => $sucursal->limite,
+                    'contacto_administrativo' => $sucursal->contacto_administrativo // Añadir el contacto administrativo
+                ];
+            }
+        }
+    
+        return response()->json($resultados);
+    }
+    
+
 
 
 

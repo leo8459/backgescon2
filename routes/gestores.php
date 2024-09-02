@@ -19,7 +19,7 @@ Route::middleware(['auth:api_gestore'])->group(function () {
     Route::put('/marcarrecogido3/{solicitude}/', 'SolicitudeController@marcarRecogido');
 
 
-
+    Route::get('/restantessaldo3', 'SolicitudeController@obtenerSaldoRestanteTodasSucursales');
     Route::get('/GsucursalesConContrato', 'DashboardGestorController@sucursalesConContrato');
     Route::get('/GsucursalesSinContrato', 'DashboardGestorController@sucursalesSinContrato');
     Route::get('/GtotalNombreD', 'DashboardGestorController@totalNombreD');

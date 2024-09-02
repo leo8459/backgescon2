@@ -13,6 +13,10 @@ Route::middleware(['auth:api_contratos'])->group(function () {
     Route::apiResource('/sucursales4', 'SucursaleController')->parameters(['sucursales4' => 'sucursale']);
 
 
+
+
+    Route::get('/restantessaldo4', 'SolicitudeController@obtenerSaldoRestanteTodasSucursales');
+
     Route::get('/Esolicitudes-hoy4', 'DashboardEncargadoController@solicitudesHoy');
     Route::get('/Esolicitudes-estado-04', 'DashboardEncargadoController@solicitudesEstado0');
     Route::get('/Esolicitudes-estado-14', 'DashboardEncargadoController@solicitudesEstado1');

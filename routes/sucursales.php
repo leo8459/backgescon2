@@ -28,6 +28,7 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
 
     // TODOS LOS GETS
 
+    Route::get('/restante2/{sucursale_id}', 'SolicitudeController@obtenerSaldoRestante');
 
     Route::get('/totalNombreD', 'DashboardController@totalNombreD');
     Route::get('/todas-solicitudes', 'DashboardController@todasSolicitudes');

@@ -16,6 +16,7 @@ return new class extends Migration
         Schema::create('sucursales', function (Blueprint $table) {
             $table->id();
             $table->string('nombre')->nullable();
+            $table->string('sigla')->nullable();
             $table->string('email')->unique();
             $table->string('password');
             $table->string('origen')->nullable();
