@@ -357,22 +357,20 @@ class SolicitudeController extends Controller
         }
     }
     public function RecibirPaquete(Request $request, Solicitude $solicitude)
-    {
-         
-            $solicitude->estado = 10;
-            $solicitude->encargado_regional_id = $request->encargado_regional_id; // Asignar el cartero de entrega
-            $solicitude->save();
-            return response()->json($solicitude);
+{
+    $solicitude->estado = 10;
+    $solicitude->encargado_regional_id = $request->encargado_regional_id; // Asignar el cartero de entrega
+    $solicitude->peso_r = $request->peso_r; // Actualizar el peso
+    $solicitude->nombre_d = $request->nombre_d; // Actualizar el nombre destinatario
+    $solicitude->save();
+    return response()->json($solicitude);
+}
 
-        
-    }
     public function EnCaminoRegional(Request $request, Solicitude $solicitude)
     {
         try {
             $solicitude->estado = 9;
             $solicitude->cartero_entrega_id = $request->cartero_entrega_id; // Asignar el cartero de entrega
-            $solicitude->peso_r = $request->peso_r; // Actualizar el peso
-            $solicitude->nombre_d = $request->nombre_d; // Actualizar el peso
             $solicitude->save();
             return response()->json($solicitude);
 
