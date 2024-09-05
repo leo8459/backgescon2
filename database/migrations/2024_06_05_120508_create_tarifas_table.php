@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('retencion')->nullable();
             $table->integer('descuento')->nullable();
             $table->string('dias_entrega')->nullable(); // Nueva columna para fecha y hora de entrega
+            // $table->time('hora_pedido')->nullable(); // Nueva columna para la hora del pedido
 
             $table->foreignId('sucursale_id')->nullable()->constrained('sucursales')->onDelete('cascade');
             $table->timestamps();

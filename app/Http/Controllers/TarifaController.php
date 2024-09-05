@@ -36,6 +36,7 @@ class TarifaController extends Controller
         $tarifa->retencion = $request->retencion;//nacional
         $tarifa->dias_entrega = $request->dias_entrega;//nacional
         $tarifa->descuento = $request->descuento;//nacional
+        // $tarifa->hora_pedido = $request->hora_pedido;//nacional
 
         $tarifa->sucursale_id = $request->sucursale_id;//nacional
         $tarifa->save();
@@ -71,6 +72,7 @@ class TarifaController extends Controller
         $tarifa->retencion = $request->retencion;//nacional
         $tarifa->dias_entrega = $request->dias_entrega;//nacional
         $tarifa->descuento = $request->descuento;//nacional
+        // $tarifa->hora_pedido = $request->hora_pedido;//nacional
 
         $tarifa->sucursale_id = $request->sucursale_id;
         $tarifa->save();

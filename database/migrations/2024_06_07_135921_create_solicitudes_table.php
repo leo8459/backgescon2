@@ -43,7 +43,12 @@ return new class extends Migration
             $table->string('fecha_recojo_c')->nullable();
             $table->string('fecha_devolucion')->nullable();
             $table->string('fecha_envio_regional')->nullable();
+            
+            $table->string('reencaminamiento')->nullable();
+            $table->int('peso_reencaminar')->nullable();
+            $table->int('peso_reencaminado_recibido')->nullable();
 
+            
             $table->string('observacion')->nullable();
             $table->string('justificacion')->nullable();
             $table->text('imagen')->nullable();

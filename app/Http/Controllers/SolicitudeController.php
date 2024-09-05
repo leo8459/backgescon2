@@ -379,7 +379,48 @@ class SolicitudeController extends Controller
             return response()->json(['error' => 'Error al marcar la solicitud como rechazada.', 'exception' => $e->getMessage()], 500);
         }
     }
+    public function reencaminar(Request $request, Solicitude $solicitude)
+    {
+        try {
+            // Cambiar el estado a 12
+            $solicitude->estado = 12;
+            $solicitude->peso_reencaminar = $request->peso_reencaminar; // Actualizar el peso
 
+            // Asignar el valor del campo reencaminamiento desde el request
+            $solicitude->reencaminamiento = $request->input('reencaminamiento');
+    
+            // Guardar los cambios en la base de datos
+            $solicitude->save();
+    
+            // Devolver la respuesta con la solicitud actualizada
+            return response()->json(['message' => 'Solicitud reencaminada exitosamente.', 'solicitud' => $solicitude], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al reencaminar la solicitud.', 'exception' => $e->getMessage()], 500);
+        }
+    }
+    public function marcarComoReencaminadoRecibido(Request $request, Solicitude $solicitude)
+{
+    try {
+        // Cambiar el estado a 13
+        $solicitude->estado = 13;
+
+        // Guardar el peso reencaminado recibido
+        $solicitude->peso_reencaminado_recibido = $request->input('peso_reencaminado_recibido');
+
+        // Guardar cambios en la solicitud
+        $solicitude->save();
+
+        return response()->json([
+            'message' => 'Solicitud actualizada correctamente.',
+            'solicitude' => $solicitude
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Error al actualizar la solicitud.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
     public function obtenerSaldoRestante($sucursale_id)
     {
         $sucursal = Sucursale::find($sucursale_id);
