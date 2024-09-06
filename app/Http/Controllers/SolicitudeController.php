@@ -403,8 +403,9 @@ class SolicitudeController extends Controller
     try {
         // Cambiar el estado a 13
         $solicitude->estado = 13;
-
-        // Guardar el peso reencaminado recibido
+        $solicitude->encargado_regional_id = $request->encargado_regional_id; // Asignar el cartero de entrega
+        $solicitude->nombre_d = $request->nombre_d; // Actualizar el nombre destinatario
+        $solicitude->save();
         $solicitude->peso_reencaminado_recibido = $request->input('peso_reencaminado_recibido');
 
         // Guardar cambios en la solicitud
