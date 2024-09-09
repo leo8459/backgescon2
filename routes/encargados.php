@@ -22,7 +22,7 @@ Route::middleware(['auth:api_encargado'])->group(function () {
     Route::put('/recibirpaquetes5/{solicitude}', 'SolicitudeController@RecibirPaquete');
     Route::put('/verificarreturn5/{solicitude}', 'SolicitudeController@returnverificar');
     Route::put('/reencaminar5/{solicitude}', 'SolicitudeController@reencaminar');
-    Route::put('/reencaminado-recibido5/{solicitude}', 'SolicitudeController@marcarComoReencaminadoRecibido');
+    Route::put('/reencaminadorecibido5/{solicitude}', 'SolicitudeController@marcarComoReencaminadoRecibido');
 
 
     

@@ -406,7 +406,7 @@ class SolicitudeController extends Controller
         $solicitude->encargado_regional_id = $request->encargado_regional_id; // Asignar el cartero de entrega
         $solicitude->nombre_d = $request->nombre_d; // Actualizar el nombre destinatario
         $solicitude->save();
-        $solicitude->peso_reencaminado_recibido = $request->input('peso_reencaminado_recibido');
+        $solicitude->peso_r = $request->peso_r; // Actualizar el peso
 
         // Guardar cambios en la solicitud
         $solicitude->save();
