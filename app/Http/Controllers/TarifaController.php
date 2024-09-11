@@ -37,6 +37,7 @@ class TarifaController extends Controller
         $tarifa->dias_entrega = $request->dias_entrega;//nacional
         $tarifa->descuento = $request->descuento;//nacional
         // $tarifa->hora_pedido = $request->hora_pedido;//nacional
+        $tarifa->estado = $request->estado ?? 1;
 
         $tarifa->sucursale_id = $request->sucursale_id;//nacional
         $tarifa->save();
@@ -90,4 +91,15 @@ class TarifaController extends Controller
         $tarifa->delete();
         return $tarifa;
     }
+    public function markAsInactive(tarifa $tarifa)
+    {
+        $tarifa->estado = 2; // Cambiamos el estado a 2 (inactivo)
+        $tarifa->save(); // Guardamos los cambios en la base de datos
+    
+        return response()->json([
+            'message' => 'Estado cambiado a inactivo',
+            'tarifa' => $tarifa
+        ]);
+    }
+    
 }

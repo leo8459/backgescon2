@@ -12,6 +12,7 @@ Route::middleware(['auth:api_contratos'])->group(function () {
     Route::apiResource('/encargados4', 'EncargadoController')->parameters(['encargados4' => 'encargado']);
     Route::apiResource('/sucursales4', 'SucursaleController')->parameters(['sucursales4' => 'sucursale']);
 
+    Route::put('/validar4/{tarifa}/inactivar', 'TarifaController@markAsInactive');
 
 
 
