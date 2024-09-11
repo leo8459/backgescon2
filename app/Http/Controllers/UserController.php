@@ -106,39 +106,40 @@ class UserController extends Controller
     
     
     public function login(Request $request)
-{
-    $credentials = $request->only('email', 'password');
-
-    try {
-        // Array de guards para intentar autenticación
-        $guards = [
-            'api_admin' => 'administrador',
-            'api_cartero' => 'cartero',
-            'api_sucursal' => 'sucursal',
-            'api_gestore' => 'Gestore',
-            'api_encargado' => 'encargado',
-            'api_contratos' => 'contratos',
-            'api_empresas' => 'empresas'
-
-        ];
-
-        foreach ($guards as $guard => $userType) {
-            if ($token = Auth::guard($guard)->attempt($credentials)) {
-                $user = Auth::guard($guard)->user();
-                return response()->json([
-                    'message' => 'Inicio de sesión correcto',
-                    'token' => $token,
-                    'user' => $user,
-                    'userType' => $userType
-                ]);
+    {
+        $credentials = $request->only('email', 'password');
+    
+        try {
+            // Array de guards para intentar autenticación
+            $guards = [
+                'api_admin' => 'administrador',
+                'api_cartero' => 'cartero',
+                'api_sucursal' => 'sucursal',
+                'api_gestore' => 'Gestore',
+                'api_encargado' => 'encargado',
+                'api_contratos' => 'contratos',
+                'api_empresas' => 'empresas'
+            ];
+    
+            foreach ($guards as $guard => $userType) {
+                if ($token = Auth::guard($guard)->attempt($credentials)) {
+                    $user = Auth::guard($guard)->user();
+                    return response()->json([
+                        'message' => 'Inicio de sesión correcto',
+                        'token' => $token,
+                        'user' => $user,
+                        'userType' => $userType
+                    ]);
+                }
             }
+    
+            // Si no se autenticó con ningún guard, devolver error
+            return response()->json(['error' => 'Credenciales incorrectas'], 400);
+    
+        } catch (\Exception $e) {
+            // Mostrar el mensaje del error real
+            return response()->json(['error' => 'Ocurrió un problema al intentar iniciar sesión.', 'details' => $e->getMessage()], 500);
         }
-
-        // Si no se autenticó con ningún guard, devolver error
-        return response()->json(['error' => 'Credenciales incorrectas'], 400);
-
-    } catch (\Exception $e) {
-        return response()->json(['error' => 'Ocurrió un problema al intentar iniciar sesión.'], 500);
     }
-}
+    
 }
