@@ -47,4 +47,8 @@ class empresa extends Authenticatable implements JWTSubject
     {
        return [];
     }
+    public function sucursale()
+    {
+        return $this->belongsTo(Sucursale::class);
+    }
 }
