@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Storage;
-use App\Models\empresa;
+use App\Models\Empresa;
 use Illuminate\Notifications\Notifiable;
 use App\Http\Requests\LoginFormRequest;
 use Illuminate\Http\Request;
@@ -20,7 +20,7 @@ class EmpresaController extends Controller
      */
     public function index()
     {
-        return empresa::all();
+        return Empresa::all();
     }
 
     /**
@@ -32,7 +32,7 @@ class EmpresaController extends Controller
     public function store(Request $request)
     {
         // Crea una nueva instancia de usuario
-        $empresa = new empresa();
+        $empresa = new Empresa();
         $empresa->nombre = $request->nombre;
         $empresa->email = $request->email;
         $empresa->estado = $request->estado ?? 1;
@@ -48,10 +48,10 @@ class EmpresaController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  \App\Models\empresa  $empresa
+     * @param  \App\Models\Empresa  $empresa
      * @return \Illuminate\Http\Response
      */
-    public function show(empresa $empresa)
+    public function show(Empresa $empresa)
     {
         return $empresa;
 
@@ -61,10 +61,10 @@ class EmpresaController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\empresa  $empresa
+     * @param  \App\Models\Empresa  $Empresa
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, empresa $empresa)
+    public function update(Request $request, Empresa $empresa)
     {
         $empresa->nombre = $request->nombre;
         $empresa->estado= $request->estado;
@@ -83,10 +83,10 @@ class EmpresaController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\empresa  $empresa
+     * @param  \App\Models\Empresa  $Empresa
      * @return \Illuminate\Http\Response
      */
-    public function destroy(empresa $empresa)
+    public function destroy(Empresa $empresa)
     {
         $empresa->estado = 0;
         $empresa->save();

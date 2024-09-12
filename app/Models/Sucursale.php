@@ -17,7 +17,7 @@ class Sucursale extends Authenticatable implements JWTSubject
     
     public function empresa()
     {
-        return $this->belongsTo(empresa::class);
+        return $this->belongsTo(Empresa::class);
     }
 
     public function solicitudes()

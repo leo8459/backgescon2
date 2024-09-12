@@ -13,7 +13,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 
 
-class encargado extends Authenticatable implements JWTSubject
+class Encargado extends Authenticatable implements JWTSubject
 {
     use HasApiTokens, HasFactory, Notifiable;
     

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\encargado;
+use App\Models\Encargado;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
@@ -21,7 +21,7 @@ class EncargadoController extends Controller
      */
     public function index()
     {
-        return encargado::all();
+        return Encargado::all();
     }
 
     /**
@@ -33,7 +33,7 @@ class EncargadoController extends Controller
     public function store(Request $request)
     {
          // Crea una nueva instancia de usuario
-         $encargado = new encargado();
+         $encargado = new Encargado();
          $encargado->nombre = $request->nombre;
          $encargado->apellidos = $request->apellidos;
          $encargado->email = $request->email;
@@ -50,10 +50,10 @@ class EncargadoController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  \App\Models\encargado  $encargado
+     * @param  \App\Models\Encargado  $encargado
      * @return \Illuminate\Http\Response
      */
-    public function show(encargado $encargado)
+    public function show(Encargado $encargado)
     {
         return $encargado;
 
@@ -63,10 +63,10 @@ class EncargadoController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\encargado  $encargado
+     * @param  \App\Models\Encargado  $Encargado
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, encargado $encargado)
+    public function update(Request $request, Encargado $encargado)
     {
         $encargado->nombre = $request->nombre;
         $encargado->apellidos = $request->apellidos;
@@ -84,10 +84,10 @@ class EncargadoController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\encargado  $encargado
+     * @param  \App\Models\Encargado  $encargado
      * @return \Illuminate\Http\Response
      */
-    public function destroy(encargado $encargado)
+    public function destroy(Encargado $encargado)
     {
         $encargado->estado = 0;
         $encargado->save();

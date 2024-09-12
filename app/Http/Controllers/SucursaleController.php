@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Sucursale;
 use Illuminate\Http\Request;
-use App\Models\empresa;
+use App\Models\Empresa;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Notifications\Notifiable;
 use App\Http\Requests\LoginFormRequest;

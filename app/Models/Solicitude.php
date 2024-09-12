@@ -32,10 +32,10 @@ class Solicitude extends Model
     }
     public function encargado()
     {
-        return $this->belongsTo(encargado::class, 'encargado_id');
+        return $this->belongsTo(Encargado::class, 'encargado_id');
     }
     public function encargadoregional()
     {
-        return $this->belongsTo(encargado::class, 'encargado_regional_id');
+        return $this->belongsTo(Encargado::class, 'encargado_regional_id');
     }
 }

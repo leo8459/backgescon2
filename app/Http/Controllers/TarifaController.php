@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\tarifa;
+use App\Models\Tarifa;
 use Illuminate\Http\Request;
-use App\Models\empresa;
+use App\Models\Empresa;
 use App\Models\Sucursale;
 
 class TarifaController extends Controller
@@ -16,7 +16,7 @@ class TarifaController extends Controller
      */
     public function index()
     {
-        return tarifa::with(['sucursale'])->get();
+        return Tarifa::with(['sucursale'])->get();
     }
 
     /**
@@ -27,7 +27,7 @@ class TarifaController extends Controller
      */
     public function store(Request $request)
     {
-        $tarifa = new tarifa();
+        $tarifa = new Tarifa();
         $tarifa->departamento = $request->departamento;
         $tarifa->servicio = $request->servicio;//nacional
         $tarifa->precio = $request->precio;//nacional
@@ -48,10 +48,10 @@ class TarifaController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  \App\Models\tarifa  $tarifa
+     * @param  \App\Models\Tarifa  $Tarifa
      * @return \Illuminate\Http\Response
      */
-    public function show(tarifa $tarifa)
+    public function show(Tarifa $tarifa)
     {
         return $tarifa;
     }
@@ -60,10 +60,10 @@ class TarifaController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\tarifa  $tarifa
+     * @param  \App\Models\Tarifa  $Tarifa
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, tarifa $tarifa)
+    public function update(Request $request, Tarifa $tarifa)
     {
         $tarifa->departamento = $request->departamento;
         $tarifa->servicio = $request->servicio;//nacional
@@ -83,15 +83,15 @@ class TarifaController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\tarifa  $tarifa
+     * @param  \App\Models\Tarifa  $Tarifa
      * @return \Illuminate\Http\Response
      */
-    public function destroy(tarifa $tarifa)
+    public function destroy(Tarifa $tarifa)
     {
         $tarifa->delete();
         return $tarifa;
     }
-    public function markAsInactive(tarifa $tarifa)
+    public function markAsInactive(Tarifa $tarifa)
     {
         $tarifa->estado = 2; // Cambiamos el estado a 2 (inactivo)
         $tarifa->save(); // Guardamos los cambios en la base de datos

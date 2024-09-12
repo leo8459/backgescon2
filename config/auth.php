@@ -81,7 +81,7 @@ return [
       ],
       'encargados' => [
          'driver' => 'eloquent',
-         'model' => App\Models\encargado::class,
+         'model' => App\Models\Encargado::class,
       ],
       'gestores' => [
          'driver' => 'eloquent',
@@ -93,7 +93,7 @@ return [
       ],
       'empresas' => [
          'driver' => 'eloquent',
-         'model' => App\Models\empresa::class,
+         'model' => App\Models\Empresa::class,
       ],
    ],
 

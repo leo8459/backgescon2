@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DetalleSolicitude;
 use App\Models\Solicitude;
 use App\Models\Sucursale;
-use App\Models\encargado;
+use App\Models\Encargado;
 use App\Models\Tarifa;
 use App\Models\Direccione;
 use Picqer\Barcode\BarcodeGeneratorPNG;
