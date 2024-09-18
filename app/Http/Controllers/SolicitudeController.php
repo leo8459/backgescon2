@@ -332,6 +332,9 @@ class SolicitudeController extends Controller
             $solicitude->estado = 7;
             $solicitude->fecha_devolucion = $request->fecha_devolucion ?? now(); // Asigna la fecha actual si no se proporciona
             $solicitude->imagen_devolucion = $request->imagen_devolucion;
+            $solicitude->firma_o = $request->firma_o;
+            $solicitude->cartero_entrega_id = $request->cartero_entrega_id; // Asignar el cartero de entrega
+
             $solicitude->save();
             return response()->json($solicitude);
 
