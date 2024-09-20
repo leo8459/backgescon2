@@ -10,6 +10,7 @@ Route::middleware(['auth:api_cartero'])->group(function () {
     Route::apiResource('/tarifas', 'TarifaController');
     Route::apiResource('/solicitudes', 'SolicitudeController');
     Route::apiResource('/encargados', 'EncargadoController');
+    Route::apiResource('/eventos', 'EventoController');
 
     Route::put('/solicitudesrecojo/{solicitude}', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega/{solicitude}', 'SolicitudeController@markAsEntregado');

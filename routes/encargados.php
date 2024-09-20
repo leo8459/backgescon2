@@ -11,6 +11,7 @@ Route::middleware(['auth:api_encargado'])->group(function () {
     Route::apiResource('/solicitudes5', 'SolicitudeController')->parameters(['solicitudes5' => 'solicitude']);
     Route::apiResource('/encargados5', 'EncargadoController')->parameters(['encargados5' => 'encargado']);
     Route::apiResource('/sucursales5', 'SucursaleController')->parameters(['sucursales5' => 'sucursale']);
+    Route::apiResource('/eventos5', 'EventoController');
 
     Route::put('/solicitudesrecojo5/{solicitude}', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega5/{solicitude}', 'SolicitudeController@markAsEntregado');

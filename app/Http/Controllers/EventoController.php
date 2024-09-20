@@ -22,8 +22,8 @@ class EventoController extends Controller
      */
     public function store(Request $request)
     {
-          // Crea una nueva instancia de usuario
-          $evento = new Evento();
+        dd($request->all()); // Verifica que los datos lleguen correctamente
+        $evento = new Evento();
           $evento->accion = $request->accion;
           $evento->descripcion = $request->descripcion;
           $evento->codigo = $request->codigo;

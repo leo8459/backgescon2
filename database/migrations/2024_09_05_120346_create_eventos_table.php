@@ -17,6 +17,9 @@ return new class extends Migration
             $table->string('descripcion')->nullable();
             $table->string('codigo')->nullable();
             $table->timestamp('fecha_hora')->nullable();
+            $table->string('user_type')->nullable(); // Para almacenar el tipo de usuario (empresa, sucursal, etc.)
+            $table->unsignedBigInteger('user_id')->nullable(); // Para almacenar el ID del usuario que hizo la acción
+
 
             $table->timestamps();
         });
