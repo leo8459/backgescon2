@@ -13,7 +13,8 @@ class EventoController extends Controller
      */
     public function index()
     {
-        return Evento::all();
+        $eventos = Evento::with(['cartero', 'sucursale', 'encargado'])->get();
+        return response()->json($eventos);
 
     }
 
