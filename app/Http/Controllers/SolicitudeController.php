@@ -109,6 +109,7 @@ class SolicitudeController extends Controller
         // Registrar el evento usando el modelo Evento
         Evento::create([
             'accion' => 'Solicitud',
+            'sucursale_id' => $solicitude->sucursale_id,
             'descripcion' => 'Solicitud de Recojo de Paquetes',
             'codigo' => $solicitude->guia,
             'fecha_hora' => now(),
@@ -169,6 +170,8 @@ class SolicitudeController extends Controller
         $solicitude->encargado_regional_id = $request->encargado_regional_id; // Asignar el cartero de entrega
         Evento::create([
             'accion' => 'Entregado',
+            'encargado_id' => $solicitude->encargado_id,  // Asignar encargado
+            'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,  // Si no hay cartero_entrega_id, usa cartero_recogida_id
             'descripcion' => 'Envio entregado con exito',
             'codigo' => $solicitude->guia,
             'fecha_hora' => now(),
@@ -190,6 +193,7 @@ class SolicitudeController extends Controller
             Evento::create([
                 'accion' => 'Cancelar',
                 'descripcion' => 'Cancelacion del envio',
+                'sucursale_id' => $solicitude->sucursale_id,
                 'codigo' => $solicitude->guia,
                 'fecha_hora' => now(),
             ]);
@@ -318,6 +322,7 @@ class SolicitudeController extends Controller
         $solicitude->save();
         Evento::create([
             'accion' => 'Despachado',
+            'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,  // Si no hay cartero_entrega_id, usa cartero_recogida_id
             'descripcion' => 'Envio en camino',
             'codigo' => $solicitude->guia,
             'fecha_hora' => now(),
@@ -336,6 +341,7 @@ class SolicitudeController extends Controller
         $solicitude->save();
         Evento::create([
             'accion' => 'Despachado',
+            'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,  // Si no hay cartero_entrega_id, usa cartero_recogida_id
             'descripcion' => 'Envio en camino',
             'codigo' => $solicitude->guia,
             'fecha_hora' => now(),
@@ -349,6 +355,7 @@ class SolicitudeController extends Controller
             $solicitude->save();
             Evento::create([
                 'accion' => 'Verificados',
+                'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,  // Si no hay encargado_id, usa encargado_regional_id
                 'descripcion' => 'Verificar Envios',
                 'codigo' => $solicitude->guia,
                 'fecha_hora' => now(),
@@ -376,6 +383,7 @@ class SolicitudeController extends Controller
             // Registrar el evento usando el modelo Evento
             Evento::create([
                 'accion' => 'Recojo',
+                'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,  // Si no hay cartero_entrega_id, usa cartero_recogida_id
                 'descripcion' => 'Recojo de envios',
                 'codigo' => $solicitude->guia,
                 'fecha_hora' => now(),
@@ -388,10 +396,10 @@ class SolicitudeController extends Controller
         }
     }
 
-    
 
 
-    
+
+
 
 
     public function returnverificar(Request $request, Solicitude $solicitude)
@@ -401,6 +409,7 @@ class SolicitudeController extends Controller
             $solicitude->save();
             Evento::create([
                 'accion' => 'Rechazado',
+                'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,  // Si no hay encargado_id, usa encargado_regional_id
                 'descripcion' => 'Devolver a remitente',
                 'codigo' => $solicitude->guia,
                 'fecha_hora' => now(),
@@ -425,6 +434,7 @@ class SolicitudeController extends Controller
             $solicitude->save();
             Evento::create([
                 'accion' => 'Devolucion',
+                'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,  // Si no hay cartero_entrega_id, usa cartero_recogida_id
                 'descripcion' => 'Entregado a remitente',
                 'codigo' => $solicitude->guia,
                 'fecha_hora' => now(),
@@ -448,6 +458,7 @@ class SolicitudeController extends Controller
             $solicitude->save();
             Evento::create([
                 'accion' => 'Despachado',
+                'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,  // Si no hay encargado_id, usa encargado_regional_id
                 'descripcion' => 'Despacho de envio a regional',
                 'codigo' => $solicitude->guia,
                 'fecha_hora' => now(),
@@ -465,13 +476,15 @@ class SolicitudeController extends Controller
             $solicitude->estado = 9;
             $solicitude->cartero_entrega_id = $request->cartero_entrega_id; // Asignar el cartero de entrega
             $solicitude->save();
-            return response()->json($solicitude);
             Evento::create([
                 'accion' => 'EN ENTREGA',
+                'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,  // Si no hay cartero_entrega_id, usa cartero_recogida_id
                 'descripcion' => 'Envio en camino',
                 'codigo' => $solicitude->guia,
                 'fecha_hora' => now(),
             ]);
+            return response()->json($solicitude);
+           
             return response()->json(['message' => 'Solicitud marcada como rechazada exitosamente.'], 200);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Error al marcar la solicitud como rechazada.', 'exception' => $e->getMessage()], 500);
@@ -488,6 +501,7 @@ class SolicitudeController extends Controller
         $solicitude->save();
         Evento::create([
             'accion' => 'Recibir',
+            'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,  // Si no hay encargado_id, usa encargado_regional_id
             'descripcion' => 'Recibir envío en oficina de entrega',
             'codigo' => $solicitude->guia,
             'fecha_hora' => now(),
@@ -509,6 +523,7 @@ class SolicitudeController extends Controller
             $solicitude->save();
             Evento::create([
                 'accion' => 'Rechazado',
+                'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,  // Si no hay cartero_entrega_id, usa cartero_recogida_id
                 'descripcion' => 'Devolver a remitente',
                 'codigo' => $solicitude->guia,
                 'fecha_hora' => now(),
@@ -521,13 +536,13 @@ class SolicitudeController extends Controller
         }
     }
 
-    
-    
 
 
-   
 
-   
+
+
+
+
 
 
     public function reencaminar(Request $request, Solicitude $solicitude)
@@ -544,6 +559,7 @@ class SolicitudeController extends Controller
             $solicitude->save();
             Evento::create([
                 'accion' => 'Reencaminar',
+                'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,  // Si no hay encargado_id, usa encargado_regional_id
                 'descripcion' => 'Despacho de envio a regional',
                 'codigo' => $solicitude->guia,
                 'fecha_hora' => now(),
@@ -571,6 +587,7 @@ class SolicitudeController extends Controller
             $solicitude->save();
             Evento::create([
                 'accion' => 'Recibir',
+                'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,  // Si no hay encargado_id, usa encargado_regional_id
                 'descripcion' => 'Recibir envío reencaminado en oficinas',
                 'codigo' => $solicitude->guia,
                 'fecha_hora' => now(),
@@ -586,7 +603,4 @@ class SolicitudeController extends Controller
             ], 500);
         }
     }
-
-
-    
 }

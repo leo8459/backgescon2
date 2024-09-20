@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
+        
         Schema::create('eventos', function (Blueprint $table) {
             $table->id();
             $table->string('accion')->nullable();
             $table->string('descripcion')->nullable();
             $table->string('codigo')->nullable();
             $table->timestamp('fecha_hora')->nullable();
-            $table->string('user_type')->nullable(); // Para almacenar el tipo de usuario (empresa, sucursal, etc.)
-            $table->unsignedBigInteger('user_id')->nullable(); // Para almacenar el ID del usuario que hizo la acción
-
+         
+            $table->foreignId('sucursale_id')->nullable()->constrained('sucursales')->onDelete('cascade');
+            $table->foreignId('encargado_id')->nullable()->constrained('encargados')->onDelete('cascade');
+            $table->foreignId('cartero_id')->nullable()->constrained('carteros')->onDelete('cascade');
 
             $table->timestamps();
         });
@@ -30,6 +32,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('eventos');
-    }
+        Schema::table('eventos', function (Blueprint $table) {
+            $table->dropColumn('sucursale_id');
+            $table->dropForeign(['encargado_id']);
+            $table->dropForeign(['cartero_id']);
+            $table->dropColumn(['encargado_id', 'cartero_id']);
+        });    }
 };
