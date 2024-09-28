@@ -29,5 +29,11 @@ Route::middleware(['auth:api_contratos'])->group(function () {
     Route::get('/Esolicitudes-estado-2-hoy4', 'DashboardEncargadoController@solicitudesEstado2Hoy');
     Route::get('/Esolicitudes-estado-3-hoy4', 'DashboardEncargadoController@solicitudesEstado3Hoy');
     Route::get('/Esolicitudes-estado-5-hoy4', 'DashboardEncargadoController@solicitudesEstado5Hoy');
+
+
+
+
+    Route::get('/solicitudes/alquileres', 'SolicitudeController@obtenerAlquileres');
+
 });
 

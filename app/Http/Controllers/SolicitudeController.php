@@ -16,6 +16,7 @@ use App\Models\Evento; // Asegúrate de importar el modelo Evento
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class SolicitudeController extends Controller
 {
@@ -601,6 +602,28 @@ class SolicitudeController extends Controller
                 'message' => 'Error al actualizar la solicitud.',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+
+    public function obtenerAlquileres()
+    {
+        // Hacer la solicitud GET a la API de alquileres
+        $response = Http::get('http://127.0.0.1:8000/cajero/alquileres');
+
+        // Verificar si la solicitud fue exitosa
+        if ($response->successful()) {
+            // Obtener los datos de alquileres desde la respuesta
+            $alquileres = $response->json();
+
+            // Devolver los datos en formato JSON
+            return response()->json([
+                'message' => 'Datos de alquileres recuperados exitosamente',
+                'data' => $alquileres
+            ]);
+        } else {
+            // Manejar el error en caso de que la solicitud falle
+            return response()->json(['message' => 'Error al recuperar los datos de alquileres'], 500);
         }
     }
 }
