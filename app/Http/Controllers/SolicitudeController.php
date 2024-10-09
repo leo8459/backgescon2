@@ -184,7 +184,30 @@ class SolicitudeController extends Controller
 
         $solicitude->save();
 
-        return $solicitude;
+ /// Obtener la sucursal y verificar que exista
+$sucursal = $solicitude->sucursale;
+if (!$sucursal) {
+    \Log::error("Sucursal no encontrada para la solicitud con ID: {$solicitude->id}");
+    return response()->json(['message' => 'Sucursal no encontrada.'], 404);
+}
+
+// Obtener el correo de la sucursal y verificar que esté presente
+$email = $sucursal->correo ?? null;
+// $email = 'joseaguilar987654321@gmail.com';
+
+if (empty($email)) {
+    \Log::error("Correo de la sucursal no encontrado para la solicitud con ID: {$solicitude->id}");
+    return response()->json(['message' => 'Correo de la sucursal no encontrado.'], 400);
+}
+
+// Enviar el correo
+try {
+    \Mail::to($email)->send(new \App\Mail\PaqueteEntregadoMail($solicitude));
+} catch (\Exception $e) {
+    \Log::error("Error al enviar el correo: " . $e->getMessage());
+}
+
+return response()->json(['message' => 'Solicitud actualizada y correo enviado correctamente.'], 200);
     }
 
     public function destroy(Solicitude $solicitude)
