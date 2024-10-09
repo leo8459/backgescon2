@@ -65,6 +65,7 @@ class SolicitudeController extends Controller
         $solicitude->sucursale_id = $request->sucursale_id;
         $solicitude->tarifa_id = $request->tarifa_id ?? null;
         $solicitude->direccion_id = $request->direccion_id ?? null;
+        $solicitude->alquiler_id = $request->alquiler_id ?? null;
 
         // Validar si el campo 'guia' tiene un valor, si no, generar la guía
         $solicitude->guia = $request->guia ?: $this->generateGuia($request->sucursale_id, $request->tarifa_id)->getData()->guia;

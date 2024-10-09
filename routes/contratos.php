@@ -33,7 +33,7 @@ Route::middleware(['auth:api_contratos'])->group(function () {
 
 
 
-    Route::get('/solicitudes/alquileres', 'SolicitudeController@obtenerAlquileres');
+    // Route::get('/solicitudes/alquileres', 'SolicitudeController@obtenerAlquileres');
 
 });
 
