@@ -56,6 +56,7 @@ class SolicitudeController extends Controller
         } else {
             $optimizedImage = null; // O manejarlo como desees si no hay imagen
         }
+        // $codigoPaquete = $request->input('alquiler_id');
 
         // Crear una nueva instancia de Solicitude
         $solicitude = new Solicitude();
@@ -167,47 +168,67 @@ class SolicitudeController extends Controller
         $solicitude->fecha_recojo_c = $request->fecha_recojo_c;
         $solicitude->fecha_devolucion = $request->fecha_devolucion;
         $solicitude->imagen_devolucion = $request->imagen_devolucion;
-        $solicitude->fecha_envio_regional = $request->fecha_envio_regional; // Asigna la fecha actual si no se proporciona
-        $solicitude->peso_r = $request->peso_r; // Asigna la fecha actual si no se proporciona
-        $solicitude->encargado_regional_id = $request->encargado_regional_id; // Asignar el cartero de entrega
+        $solicitude->fecha_envio_regional = $request->fecha_envio_regional;
+        $solicitude->peso_r = $request->peso_r;
+        $solicitude->encargado_regional_id = $request->encargado_regional_id;
+
+        // Registrar el evento
         Evento::create([
             'accion' => 'Entregado',
-            'encargado_id' => $solicitude->encargado_id,  // Asignar encargado
-            'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,  // Si no hay cartero_entrega_id, usa cartero_recogida_id
-            'descripcion' => 'Envio entregado con exito',
+            'encargado_id' => $solicitude->encargado_id,
+            'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,
+            'descripcion' => 'Envío entregado con éxito',
             'codigo' => $solicitude->guia,
             'fecha_hora' => now(),
         ]);
 
-
-
-
+        // Guardar la solicitud actualizada
         $solicitude->save();
 
- /// Obtener la sucursal y verificar que exista
-$sucursal = $solicitude->sucursale;
-if (!$sucursal) {
-    \Log::error("Sucursal no encontrada para la solicitud con ID: {$solicitude->id}");
-    return response()->json(['message' => 'Sucursal no encontrada.'], 404);
-}
+        // Obtener el alquiler_id asociado a la solicitud
+        $codigoPaquete = $solicitude->alquiler_id; // Asegúrate de que este campo tiene el código del paquete
 
-// Obtener el correo de la sucursal y verificar que esté presente
-$email = $sucursal->correo ?? null;
-// $email = 'joseaguilar987654321@gmail.com';
+        // Verificar si existe código de paquete
+        if ($codigoPaquete) {
+            try {
+                // Hacer la solicitud HTTP al sistema 2 para eliminar el paquete_id
+                $response = Http::put('http://127.0.0.1:8000/cajero/alquileres/' . $codigoPaquete . '/eliminar-paquete-id');
+    
+                if ($response->successful()) {
+                    \Log::info("paquete_id eliminado en el sistema 2 para paquete código: {$codigoPaquete}");
+                } else {
+                    \Log::error("Error al eliminar paquete_id en el sistema 2 para paquete código: {$codigoPaquete}. Respuesta: " . $response->body());
+                }
+            } catch (\Exception $e) {
+                \Log::error("Excepción al eliminar paquete_id en el sistema 2: " . $e->getMessage());
+            }
+        }
 
-if (empty($email)) {
-    \Log::error("Correo de la sucursal no encontrado para la solicitud con ID: {$solicitude->id}");
-    return response()->json(['message' => 'Correo de la sucursal no encontrado.'], 400);
-}
+        // Continuar con el resto del código
 
-// Enviar el correo
-try {
-    \Mail::to($email)->send(new \App\Mail\PaqueteEntregadoMail($solicitude));
-} catch (\Exception $e) {
-    \Log::error("Error al enviar el correo: " . $e->getMessage());
-}
+        // Obtener la sucursal y verificar que exista
+        $sucursal = $solicitude->sucursale;
+        if (!$sucursal) {
+            \Log::error("Sucursal no encontrada para la solicitud con ID: {$solicitude->id}");
+            return response()->json(['message' => 'Sucursal no encontrada.'], 404);
+        }
 
-return response()->json(['message' => 'Solicitud actualizada y correo enviado correctamente.'], 200);
+        // Obtener el correo de la sucursal y verificar que esté presente
+        $email = $sucursal->email ?? null;
+
+        if (empty($email)) {
+            \Log::error("Correo de la sucursal no encontrado para la solicitud con ID: {$solicitude->id}");
+            return response()->json(['message' => 'Correo de la sucursal no encontrado.'], 400);
+        }
+
+        // Enviar el correo
+        try {
+            \Mail::to($email)->send(new \App\Mail\PaqueteEntregadoMail($solicitude));
+        } catch (\Exception $e) {
+            \Log::error("Error al enviar el correo: " . $e->getMessage());
+        }
+
+        return response()->json(['message' => 'Solicitud actualizada y correo enviado correctamente.'], 200);
     }
 
     public function destroy(Solicitude $solicitude)
