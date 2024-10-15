@@ -54,7 +54,7 @@
                <tr>
                   <td style="padding: 20px; text-align: center;">
                      <!-- Imagen del logo -->
-                     <img src="{{ asset('images/logo.png') }}" alt="Logo" style="max-width: 150px; margin-bottom: 20px;" />
+                     <img src="{{ $message->embed(public_path('images/logo.png')) }}" alt="Logo de la empresa" style="max-width: 150px; height: auto; margin-bottom: 20px;" />
                   </td>
                </tr>
                <tr>
