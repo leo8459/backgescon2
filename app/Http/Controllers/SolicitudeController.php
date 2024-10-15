@@ -491,7 +491,6 @@ class SolicitudeController extends Controller
         }
     }
 
-
     public function RecibirPaquete(Request $request, Solicitude $solicitude)
     {
         $solicitude->estado = 10;
@@ -508,7 +507,6 @@ class SolicitudeController extends Controller
         ]);
         return response()->json($solicitude);
     }
-
 
     public function Rechazado(Request $request, Solicitude $solicitude)
     {
@@ -536,15 +534,6 @@ class SolicitudeController extends Controller
         }
     }
 
-
-
-
-
-
-
-
-
-
     public function reencaminar(Request $request, Solicitude $solicitude)
     {
         try {
@@ -571,7 +560,6 @@ class SolicitudeController extends Controller
             return response()->json(['error' => 'Error al reencaminar la solicitud.', 'exception' => $e->getMessage()], 500);
         }
     }
-
 
     public function marcarComoReencaminadoRecibido(Request $request, Solicitude $solicitude)
     {
