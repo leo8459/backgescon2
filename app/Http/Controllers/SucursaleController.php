@@ -60,6 +60,7 @@ class SucursaleController extends Controller
         $sucursale->acuerdo_contrato = $request->acuerdo_contrato;
         $sucursale->tipo_contrato = $request->tipo_contrato;
         $sucursale->sigla = $request->sigla;
+        $sucursale->pagador = $request->pagador;
 
         $sucursale->save();
         
@@ -105,6 +106,8 @@ class SucursaleController extends Controller
         $sucursale->acuerdo_contrato = $request->acuerdo_contrato;
         $sucursale->tipo_contrato = $request->tipo_contrato;
         $sucursale->sigla = $request->sigla;
+        $sucursale->pagador = $request->pagador;
+
         if(isset($request->password)){
             if(!empty($request->password)){
                 $sucursale->password = Hash::make($request->password);

@@ -165,6 +165,7 @@ class SolicitudeController extends Controller
         $solicitude->fecha_recojo_c = $request->fecha_recojo_c;
         $solicitude->fecha_devolucion = $request->fecha_devolucion;
         $solicitude->imagen_devolucion = $request->imagen_devolucion;
+        $solicitude->entrega_observacion = $request->entrega_observacion;
         $solicitude->fecha_envio_regional = $request->fecha_envio_regional; // Asigna la fecha actual si no se proporciona
         $solicitude->peso_r = $request->peso_r; // Asigna la fecha actual si no se proporciona
         $solicitude->encargado_regional_id = $request->encargado_regional_id; // Asignar el cartero de entrega
@@ -233,6 +234,35 @@ class SolicitudeController extends Controller
             'limite_total' => $sucursal->limite // Asegúrate de devolver el límite total
         ]);
     }
+    public function obtenerSaldoRestanteSucursalActual()
+    {
+        // Obtén la sucursal actualmente autenticada
+        $sucursal = Auth::user();
+    
+        if (!$sucursal) {
+            return response()->json(['error' => 'Sucursal no autenticada.'], 401);
+        }
+    
+        // Convertimos el límite a numérico
+        $limite = (float) $sucursal->limite;
+    
+        // Obtenemos la suma total de 'nombre_d' de las solicitudes
+        $totalSolicitudes = Solicitude::where('sucursale_id', $sucursal->id)
+            ->sum(DB::raw('CAST(nombre_d AS NUMERIC)'));
+    
+        // Calculamos el saldo restante
+        $saldoRestante = $limite - $totalSolicitudes;
+    
+        return response()->json([
+            'sucursal' => $sucursal->nombre,
+            'saldo_restante' => $saldoRestante,
+            'limite_total' => $limite,
+            'total_nombre_d' => $totalSolicitudes // Añadimos el total de nombre_d
+        ]);
+    }
+    
+    
+
     public function obtenerSaldoRestanteTodasSucursales()
     {
         // Obtener todas las sucursales
@@ -319,6 +349,7 @@ class SolicitudeController extends Controller
     {
         $solicitude->estado = 2; // Cambiar estado a "En camino"
         $solicitude->cartero_entrega_id = $request->cartero_entrega_id; // Asignar el cartero logueado
+        $solicitude->recojo_observacion = $request->recojo_observacion; // Asignar el cartero logueado
         $solicitude->save();
         Evento::create([
             'accion' => 'Despachado',
@@ -376,6 +407,7 @@ class SolicitudeController extends Controller
             // Cambia el estado a 5 y guarda el cartero_entrega_id del request
             $solicitude->estado = 5;
             $solicitude->cartero_recogida_id = $request->input('cartero_recogida_id');
+            $solicitude->recojo_observacion = $request->recojo_observacion; // Actualizar el peso
             $solicitude->fecha_recojo_c = now();
 
             // Guarda los cambios

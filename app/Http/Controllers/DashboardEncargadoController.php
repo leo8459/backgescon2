@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Solicitude;
+use App\Models\Evento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -43,11 +44,16 @@ class DashboardEncargadoController extends Controller
     
 
     public function solicitudesEstado5()
-    {
-        $totalSolicitudes = Solicitude::where('estado', 5)->count();
+{
+    // Obtener todas las solicitudes que tienen un evento de "Recojo"
+    $totalSolicitudes = Evento::where('accion', 'Recojo')
+                              ->distinct('codigo') // Evita contar la misma solicitud varias veces
+                              ->count('codigo'); // Contar las solicitudes (asumiendo que 'codigo' es único para cada solicitud)
 
-        return response()->json(['total' => $totalSolicitudes]);
-    }
+    // Retornar el total en formato JSON
+    return response()->json(['total' => $totalSolicitudes]);
+}
+
     
 
     private function solicitudesPorEstado($estado)
@@ -93,12 +99,16 @@ class DashboardEncargadoController extends Controller
 
     public function solicitudesEstado5Hoy()
     {
+        // Obtener la fecha de hoy
         $hoy = Carbon::today()->toDateString();
-
-        $totalSolicitudes = Solicitude::where('estado', 5)
-                            ->whereDate('fecha', $hoy)
-                            ->count();
-
+    
+        // Contar los eventos con la acción "Recojo" que ocurrieron hoy
+        $totalSolicitudes = Evento::where('accion', 'Recojo') // Aquí "Recojo" debe ir entre comillas
+                                ->whereDate('fecha_hora', $hoy) // Asegúrate de que estás usando la columna correcta para la fecha
+                                ->count();
+    
+        // Retornar el total en formato JSON
         return response()->json(['total' => $totalSolicitudes]);
     }
+    
 }

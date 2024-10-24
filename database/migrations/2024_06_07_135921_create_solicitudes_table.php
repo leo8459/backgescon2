@@ -53,6 +53,8 @@ return new class extends Migration
             $table->text('firma_o')->nullable();
             $table->text('firma_d')->nullable();
             $table->text('codigo_barras')->nullable(); // Almacena la imagen del código de barras
+            $table->string('recojo_observacion')->nullable();
+            $table->string('entrega_observacion')->nullable();
 
 
             $table->timestamps();

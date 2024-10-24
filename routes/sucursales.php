@@ -27,6 +27,7 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
 
 
     // TODOS LOS GETS
+    Route::get('/restantesaldo2', 'SolicitudeController@obtenerSaldoRestanteSucursalActual');
 
     Route::get('/restante2/{sucursale_id}', 'SolicitudeController@obtenerSaldoRestante');
 

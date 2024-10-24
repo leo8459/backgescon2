@@ -32,7 +32,8 @@ return new class extends Migration
             $table->string('codigo_cliente')->unique();
             $table->string('n_contrato')->nullable();
             $table->integer('estado')->default(1);
-            
+            $table->string('pagador');
+
             $table->foreignId('empresa_id')->nullable()->constrained('empresas');
             $table->timestamps();
             
