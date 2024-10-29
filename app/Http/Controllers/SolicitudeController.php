@@ -381,23 +381,42 @@ class SolicitudeController extends Controller
     }
     public function markAsVerified(Request $request, Solicitude $solicitude)
     {
+    
         try {
             $solicitude->estado = 4;
             $solicitude->save();
+    
+            // Utilizar el encargado_id recibido en la solicitud
+            $encargadoId = $request->input('encargado_id');
+    
+            if (is_null($encargadoId)) {
+                return response()->json(['error' => 'No se recibió un encargado para esta solicitud.'], 400);
+            }
+    
             Evento::create([
                 'accion' => 'Verificados',
-                'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,  // Si no hay encargado_id, usa encargado_regional_id
+                'encargado_id' => $encargadoId,
                 'descripcion' => 'Verificar Envios',
                 'codigo' => $solicitude->guia,
                 'fecha_hora' => now(),
             ]);
-            return response()->json($solicitude);
-
-            return response()->json(['message' => 'Solicitud marcada como verificada exitosamente.'], 200);
+    
+            return response()->json(['message' => 'Solicitud marcada como verificada exitosamente.', 'solicitude' => $solicitude], 200);
+    
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Error al marcar la solicitud como verificada.', 'exception' => $e->getMessage()], 500);
+            [
+                'error' => $e->getMessage(),
+                'solicitude_id' => $solicitude->id
+            ];
+            return response()->json([
+                'error' => 'Error al marcar la solicitud como verificada.',
+                'exception' => $e->getMessage()
+            ], 500);
         }
     }
+    
+    
+    
     public function marcarRecogido(Request $request, $id)
     {
         try {
@@ -623,4 +642,35 @@ class SolicitudeController extends Controller
             ], 500);
         }
     }
+    public function getSolicitudesPorCategoriasHoy()
+    {
+        $today = date('Y-m-d');
+    
+        // Solicitudes generadas hoy
+        $solicitadasHoy = Solicitude::with(['sucursale', 'tarifa'])
+            ->whereDate('created_at', $today)
+            ->get();
+    
+        // Solicitudes recogidas hoy
+        $recogidasHoy = Solicitude::with(['sucursale', 'tarifa'])
+            ->whereDate('fecha_recojo_c', $today)
+            ->get();
+    
+        // Solicitudes entregadas hoy
+        $entregadasHoy = Solicitude::with(['sucursale', 'tarifa'])
+            ->whereNotNull('cartero_entrega_id')
+            ->whereDate('updated_at', $today)
+            ->get();
+    
+        // Retornar las solicitudes organizadas en categorías
+        return response()->json([
+            'solicitadas_hoy' => $solicitadasHoy,
+            'recogidas_hoy' => $recogidasHoy,
+            'entregadas_hoy' => $entregadasHoy,
+        ]);
+    }
+    
+
+
+
 }

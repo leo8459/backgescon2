@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Evento;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class EventoController extends Controller
 {
@@ -71,4 +72,16 @@ class EventoController extends Controller
         $evento->save();
         return $evento;
     }
+    public function eventosPorSucursal($sucursale_id)
+    {
+        $eventos = Evento::with(['cartero', 'encargado'])
+            ->where('sucursale_id', $sucursale_id)
+            ->get();
+    
+        return response()->json($eventos);
+    }
+    
+
+    
+
 }

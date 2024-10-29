@@ -13,6 +13,9 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
     Route::apiResource('/encargados2', 'EncargadoController')->parameters(['encargados2' => 'encargado']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/carteros2', 'CarteroController')->parameters(['carteros2' => 'cartero']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/direcciones2', 'DireccioneController')->parameters(['direcciones2' => 'direccione']);  //editar agragar eliminar listar apiresource
+    Route::apiResource('/eventos2', 'EventoController');
+    Route::get('/sucursales/eventos20/sucursal', 'EventoController@eventosPorSucursal');
+    // Route::post('/sucursales/change-password', 'SucursaleController@changePassword');
 
 
 
@@ -52,3 +55,4 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
     Route::post('/generar-guia', 'SolicitudeController@generateGuia');
 });
 Route::post('/login2', 'SucursaleController@login2');
+Route::post('/sucursales/change-password', 'SucursaleController@changePassword');

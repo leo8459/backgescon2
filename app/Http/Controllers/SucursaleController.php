@@ -13,7 +13,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
-
+use App\Models\Contrato;
+use App\Models\Contratos;
+use App\Models\Cartero;
+use App\Models\Gestor;
+use App\Models\Gestore;
+use App\Mail\PasswordResetMail; // Este es el Mailable para el correo de restablecimiento
 
 class SucursaleController extends Controller
 {
@@ -144,5 +149,49 @@ class SucursaleController extends Controller
         $sucursal = Auth::guard('api_sucursal')->user();
         return response()->json(['message' => 'Inicio de sesión correcto', 'token' => $token, 'sucursal' => $sucursal]);
     }
+    public function changePassword(Request $request)
+    {
+        // Validar los datos de entrada
+        $request->validate([
+            'email' => 'required|email',
+            'newPassword' => 'required|string|min:8|confirmed'
+        ]);
+    
+        // Buscar el usuario en cada tabla
+        $user = Sucursale::where('email', $request->email)->first();
+        $userType = 'sucursal';
+    
+        if (!$user) {
+            $user = Contratos::where('email', $request->email)->first();
+            $userType = 'contrato';
+        }
+    
+        if (!$user) {
+            $user = Empresa::where('email', $request->email)->first();
+            $userType = 'empresa';
+        }
+    
+        if (!$user) {
+            $user = Cartero::where('email', $request->email)->first();
+            $userType = 'cartero';
+        }
+    
+        if (!$user) {
+            $user = Gestore::where('email', $request->email)->first();
+            $userType = 'gestor';
+        }
+    
+        // Verificar si se ha encontrado el usuario en alguna tabla
+        if (!$user) {
+            return response()->json(['message' => 'Usuario no encontrado'], 404);
+        }
+    
+        // Encriptar la nueva contraseña y guardarla
+        $user->password = Hash::make($request->newPassword);
+        $user->save();
+    
+        return response()->json(['message' => "Contraseña actualizada correctamente en la tabla $userType"]);
+    }
+
     
 }

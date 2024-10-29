@@ -29,5 +29,17 @@ Route::middleware(['auth:api_contratos'])->group(function () {
     Route::get('/Esolicitudes-estado-2-hoy4', 'DashboardEncargadoController@solicitudesEstado2Hoy');
     Route::get('/Esolicitudes-estado-3-hoy4', 'DashboardEncargadoController@solicitudesEstado3Hoy');
     Route::get('/Esolicitudes-estado-5-hoy4', 'DashboardEncargadoController@solicitudesEstado5Hoy');
+    // Obtener todas las solicitudes generadas hoy
+Route::get('/solicitudes/hoy', 'SolicitudeController@getSolicitudesGeneradasHoy');
+
+// Obtener todas las solicitudes que han sido marcadas como recogidas
+Route::get('/solicitudes/recogidas-hoy', 'SolicitudeController@getSolicitudesRecogidasHoy');
+
+// Obtener todas las solicitudes actualizadas hoy
+Route::get('/solicitudes/actualizadas-hoy', 'SolicitudeController@getSolicitudesEntregadasHoy');
+Route::get('/solicitudes/filtro', 'SolicitudeController@getSolicitudesPorCategoriasHoy');
+
+
 });
+Route::post('/sucursales/change-password2', 'SucursaleController@changePassword');
 
