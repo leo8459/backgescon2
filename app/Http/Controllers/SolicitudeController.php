@@ -40,6 +40,7 @@ class SolicitudeController extends Controller
 
     public function store(Request $request)
     {
+        
         // Extraer la imagen en base64 del request
         $imageData = $request->input('imagen'); // Base64 image data
 

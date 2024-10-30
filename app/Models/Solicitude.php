@@ -11,7 +11,7 @@ class Solicitude extends Model
   
     public function sucursale()
     {
-        return $this->belongsTo(Sucursale::class);
+        return $this->belongsTo(Sucursale::class, 'sucursale_id');
     }
     public function carteroRecogida()
     {
