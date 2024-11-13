@@ -53,6 +53,8 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
     // TODOS LOS POST
     Route::post('/solicitudes/generar-codigo-barras', 'SolicitudeController@generateBarcode');
     Route::post('/generar-guia', 'SolicitudeController@generateGuia');
+    Route::post('/solicitudes2/carga-masiva', 'SolicitudeController@cargaMasiva');
+
 });
 Route::post('/login2', 'SucursaleController@login2');
 Route::post('/sucursales/change-password', 'SucursaleController@changePassword');

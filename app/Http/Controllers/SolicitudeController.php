@@ -13,6 +13,9 @@ use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\DB;
 use App\Models\Evento; // Asegúrate de importar el modelo Evento
 
+use App\Imports\SolicitudesImport;
+use Maatwebsite\Excel\Facades\Excel;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -673,5 +676,30 @@ class SolicitudeController extends Controller
     
 
 
-
+    public function cargaMasiva(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv',
+            'sucursale_id' => 'required|integer|exists:sucursales,id',
+        ]);
+    
+        $sucursale_id = $request->input('sucursale_id');
+    
+        try {
+            $import = new SolicitudesImport($sucursale_id);
+            Excel::import($import, $request->file('file'));
+    
+            // Retornar el número de registros creados y las guías generadas
+            return response()->json([
+                'message' => 'Solicitudes importadas exitosamente',
+                'creados' => $import->getCreadoCount(),
+                'guias' => $import->getGuias(),
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error al importar el archivo',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }
