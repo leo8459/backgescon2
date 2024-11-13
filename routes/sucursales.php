@@ -47,6 +47,7 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
     Route::get('/solicitudes/buscar-por-codigo-barras', 'SolicitudeController@buscarPorCodigoBarras');
     Route::get('/direcciones', 'SolicitudeController@getDirecciones');
 
+    Route::get('/descargar-plantilla', 'SolicitudeController@descargarPlantilla');
 
 
 

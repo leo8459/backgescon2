@@ -12,6 +12,9 @@ use Picqer\Barcode\BarcodeGeneratorPNG;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\DB;
 use App\Models\Evento; // Asegúrate de importar el modelo Evento
+use Maatwebsite\Excel\Excel as ExcelFormat;
+use Illuminate\Support\Facades\Response;
+use App\Exports\PlantillaSolicitudesExport;
 
 use App\Imports\SolicitudesImport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -702,4 +705,23 @@ class SolicitudeController extends Controller
             ], 500);
         }
     }
+
+
+    public function descargarPlantilla()
+{
+    // Obtener la sucursal actualmente autenticada
+    $sucursal = Auth::user();
+
+    // Verificar si la sucursal está autenticada
+    if (!$sucursal) {
+        return response()->json(['error' => 'Sucursal no autenticada.'], 401);
+    }
+
+    // Pasar el ID de la sucursal a la clase de exportación
+    return Excel::download(new PlantillaSolicitudesExport($sucursal->id), 'plantilla_solicitudes.xlsx');
+}
+
+    
+    
+    
 }
