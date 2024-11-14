@@ -60,10 +60,10 @@ class SolicitudesImport implements ToCollection
                 $solicitude->contenido = $row[6]; // Contenido en la columna 6
                 $solicitude->destinatario = $row[7]; // Destinatario en la columna 7
                 $solicitude->telefono_d = $row[8]; // Teléfono destinatario en la columna 8
-                $solicitude->direccion_d = $row[9]; // Dirección destinatario en la columna 9
-                $solicitude->direccion_especifica_d = $row[10]; // Dirección específica en la columna 10
-                $solicitude->zona_d = $row[11]; // Zona en la columna 11
-                $solicitude->ciudad = $row[12]; // Ciudad en la columna 12
+                // No se asigna direccion_d para que quede en blanco
+                $solicitude->direccion_especifica_d = $row[9]; // Dirección específica en la columna 10
+                $solicitude->zona_d = $row[10]; // Zona en la columna 11
+                $solicitude->ciudad = $row[11]; // Ciudad en la columna 12
                 $solicitude->fecha = now();
     
                 // Generar la guía

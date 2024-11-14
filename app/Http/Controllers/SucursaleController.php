@@ -65,6 +65,7 @@ class SucursaleController extends Controller
         $sucursale->tipo_contrato = $request->tipo_contrato;
         $sucursale->sigla = $request->sigla;
         $sucursale->pagador = $request->pagador;
+        $sucursale->imagen = $request->imagen;
 
         $sucursale->save();
         

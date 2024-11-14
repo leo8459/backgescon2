@@ -5,11 +5,12 @@ namespace App\Exports;
 use App\Models\Tarifa;
 use App\Models\Direccione;
 use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Concerns\FromCollection; // Cambiado de FromArray a FromCollection
+use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Events\AfterSheet;
-use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\NamedRange;
+
 class PlantillaSolicitudesExport implements FromCollection, WithHeadings, WithEvents
 {
     protected $sucursale_id;
@@ -21,7 +22,6 @@ class PlantillaSolicitudesExport implements FromCollection, WithHeadings, WithEv
 
     public function collection()
     {
-        // Retorna una colección vacía; no necesitamos datos aquí
         return collect([]);
     }
 
@@ -37,10 +37,9 @@ class PlantillaSolicitudesExport implements FromCollection, WithHeadings, WithEv
             'Contenido',               // Columna G
             'Destinatario',            // Columna H
             'Teléfono Destinatario',   // Columna I
-            'Dirección Destinatario',  // Columna J
-            'Dirección Específica Destinatario', // Columna K
-            'Zona Destinatario',       // Columna L
-            'Ciudad Destinatario',     // Columna M
+            'Dirección Específica Destinatario', // Columna J (actualizado después de eliminar 'Dirección Destinatario')
+            'Zona Destinatario',       // Columna K
+            'Ciudad Destinatario',     // Columna L
         ];
     }
 
@@ -48,7 +47,6 @@ class PlantillaSolicitudesExport implements FromCollection, WithHeadings, WithEv
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-
                 // Obtener los datos de la base de datos filtrados por sucursale_id
                 $servicios = Tarifa::where('sucursale_id', $this->sucursale_id)
                     ->distinct()->pluck('servicio')->filter()->values()->toArray();
@@ -63,7 +61,7 @@ class PlantillaSolicitudesExport implements FromCollection, WithHeadings, WithEv
                 $sheet = $event->sheet->getDelegate();
                 $workbook = $sheet->getParent();
 
-                $listSheet = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($workbook, 'Listas');
+                $listSheet = new Worksheet($workbook, 'Listas');
                 $workbook->addSheet($listSheet);
 
                 // Escribir los datos verticalmente en la hoja 'Listas'
@@ -72,7 +70,7 @@ class PlantillaSolicitudesExport implements FromCollection, WithHeadings, WithEv
                 $listSheet->fromArray(array_map(function($item) { return [$item]; }, $direcciones), null, 'C1');
 
                 // Ocultar la hoja 'Listas'
-                $listSheet->setSheetState(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet::SHEETSTATE_HIDDEN);
+                $listSheet->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
 
                 // Crear rangos nombrados para las listas
                 $serviciosCount = count($servicios);
@@ -81,19 +79,19 @@ class PlantillaSolicitudesExport implements FromCollection, WithHeadings, WithEv
 
                 if ($serviciosCount > 0) {
                     $workbook->addNamedRange(
-                        new \PhpOffice\PhpSpreadsheet\NamedRange('Servicios', $listSheet, 'A1:A' . $serviciosCount)
+                        new NamedRange('Servicios', $listSheet, 'A1:A' . $serviciosCount)
                     );
                 }
 
                 if ($departamentosCount > 0) {
                     $workbook->addNamedRange(
-                        new \PhpOffice\PhpSpreadsheet\NamedRange('Departamentos', $listSheet, 'B1:B' . $departamentosCount)
+                        new NamedRange('Departamentos', $listSheet, 'B1:B' . $departamentosCount)
                     );
                 }
 
                 if ($direccionesCount > 0) {
                     $workbook->addNamedRange(
-                        new \PhpOffice\PhpSpreadsheet\NamedRange('Direcciones', $listSheet, 'C1:C' . $direccionesCount)
+                        new NamedRange('Direcciones', $listSheet, 'C1:C' . $direccionesCount)
                     );
                 }
 
@@ -103,13 +101,13 @@ class PlantillaSolicitudesExport implements FromCollection, WithHeadings, WithEv
                 for ($row = 2; $row <= $highestRow; $row++) {
 
                     // Validación para 'Servicio' en la columna A
-                    $this->setDataValidation($sheet, 'A' . $row, 'Listas!$A$1:$A$' . count($servicios), 'Servicio');
+                    $this->setDataValidation($sheet, 'A' . $row, 'Listas!$A$1:$A$' . $serviciosCount, 'Servicio');
 
                     // Validación para 'Departamento' en la columna B
-                    $this->setDataValidation($sheet, 'B' . $row, 'Listas!$B$1:$B$' . count($departamentos), 'Departamento');
+                    $this->setDataValidation($sheet, 'B' . $row, 'Listas!$B$1:$B$' . $departamentosCount, 'Departamento');
 
                     // Validación para 'Nombre de Dirección' en la columna C
-                    $this->setDataValidation($sheet, 'C' . $row, 'Listas!$C$1:$C$' . count($direcciones), 'Nombre de Dirección');
+                    $this->setDataValidation($sheet, 'C' . $row, 'Listas!$C$1:$C$' . $direccionesCount, 'Nombre de Dirección');
                 }
             },
         ];
@@ -130,6 +128,4 @@ class PlantillaSolicitudesExport implements FromCollection, WithHeadings, WithEv
         $validation->setPrompt('Por favor, seleccione un valor de la lista.');
         $validation->setFormula1($formula);
     }
-
-    
 }

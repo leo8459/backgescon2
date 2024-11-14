@@ -33,6 +33,7 @@ return new class extends Migration
             $table->string('n_contrato')->nullable();
             $table->integer('estado')->default(1);
             $table->string('pagador');
+            $table->text('imagen')->nullable(); // Nuevo campo para almacenar la ruta de la imagen
 
             $table->foreignId('empresa_id')->nullable()->constrained('empresas');
             $table->timestamps();
