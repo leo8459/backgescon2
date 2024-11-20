@@ -101,6 +101,8 @@ class SolicitudesImport implements ToCollection
     public function getCreadoCount() // Implementar el método
     {
         return $this->creadoCount;
+        $solicitude->save();
+
     }
     protected function generateGuia($sucursaleId, $tarifaId)
     {

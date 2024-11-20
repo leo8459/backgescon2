@@ -10,6 +10,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\NamedRange;
+use PhpOffice\PhpSpreadsheet\Style\Table;
 
 class PlantillaSolicitudesExport implements FromCollection, WithHeadings, WithEvents
 {
@@ -37,7 +38,7 @@ class PlantillaSolicitudesExport implements FromCollection, WithHeadings, WithEv
             'Contenido',               // Columna G
             'Destinatario',            // Columna H
             'Teléfono Destinatario',   // Columna I
-            'Dirección Específica Destinatario', // Columna J (actualizado después de eliminar 'Dirección Destinatario')
+            'Dirección Específica Destinatario', // Columna J
             'Zona Destinatario',       // Columna K
             'Ciudad Destinatario',     // Columna L
         ];
@@ -109,6 +110,68 @@ class PlantillaSolicitudesExport implements FromCollection, WithHeadings, WithEv
                     // Validación para 'Nombre de Dirección' en la columna C
                     $this->setDataValidation($sheet, 'C' . $row, 'Listas!$C$1:$C$' . $direccionesCount, 'Nombre de Dirección');
                 }
+
+                // **Nuevo código para aplicar el diseño de tabla y ajustar los anchos de las columnas**
+
+                // Determinar el rango de la tabla (desde A1 hasta la última columna y fila)
+                $columnCount = count($this->headings());
+                $lastColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($columnCount);
+               // Crear el rango de la tabla
+$tableRange = 'A1:' . $lastColumn . $highestRow; // Desde A1 hasta la última columna y fila
+
+// Crear la tabla
+$table = new \PhpOffice\PhpSpreadsheet\Worksheet\Table($tableRange);
+$table->setName('DataTable'); // Nombre de la tabla
+
+// Aplicar estilo de tabla
+$tableStyle = $table->getStyle();
+$tableStyle->setTheme('TableStyleMedium2'); // Cambia por cualquier estilo predefinido si deseas otro
+
+// Agregar la tabla a la hoja
+$sheet->addTable($table);
+
+
+                // Ajustar el ancho de las columnas
+                $columnWidths = [
+                    'A' => 20,
+                    'B' => 25,
+                    'C' => 30,
+                    'D' => 15,
+                    'E' => 25,
+                    'F' => 20,
+                    'G' => 25,
+                    'H' => 25,
+                    'I' => 20,
+                    'J' => 35,
+                    'K' => 20,
+                    'L' => 20,
+                ];
+
+                foreach ($columnWidths as $column => $width) {
+                    $sheet->getColumnDimension($column)->setWidth($width);
+                }
+
+                // Aumentar la altura de la fila de encabezados si es necesario
+                $sheet->getRowDimension(1)->setRowHeight(25);
+
+                // Aplicar estilo de fuente y alineación a los encabezados
+                $headerStyle = [
+                    'font' => [
+                        'bold' => true,
+                        'size' => 12,
+                        'color' => ['argb' => 'FFFFFFFF'],
+                    ],
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['argb' => 'FF4F81BD'],
+                    ],
+                    'alignment' => [
+                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                    ],
+                ];
+
+                $sheet->getStyle('A1:' . $lastColumn . '1')->applyFromArray($headerStyle);
             },
         ];
     }
