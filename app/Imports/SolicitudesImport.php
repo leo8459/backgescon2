@@ -15,6 +15,7 @@ class SolicitudesImport implements ToCollection
     protected $sucursale_id;
     protected $guias = [];
     protected $addedSolicitudes = [];
+    protected $creadoCount = 0; // Nueva propiedad para contar los registros creados
 
     public function __construct($sucursale_id)
     {
@@ -97,7 +98,10 @@ class SolicitudesImport implements ToCollection
     {
         return $this->guias;
     }
-
+    public function getCreadoCount() // Implementar el método
+    {
+        return $this->creadoCount;
+    }
     protected function generateGuia($sucursaleId, $tarifaId)
     {
         $sucursal = Sucursale::find($sucursaleId);
