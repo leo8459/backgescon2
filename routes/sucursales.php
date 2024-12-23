@@ -14,7 +14,6 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
     Route::apiResource('/carteros2', 'CarteroController')->parameters(['carteros2' => 'cartero']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/direcciones2', 'DireccioneController')->parameters(['direcciones2' => 'direccione']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/eventos2', 'EventoController');
-    Route::get('/sucursales/eventos20/sucursal', 'EventoController@eventosPorSucursal');
     // Route::post('/sucursales/change-password', 'SucursaleController@changePassword');
 
 
@@ -31,6 +30,7 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
 
     // TODOS LOS GETS
     Route::get('/restantesaldo2', 'SolicitudeController@obtenerSaldoRestanteSucursalActual');
+    Route::get('/sucursales/eventos20/sucursal', 'EventoController@eventosPorSucursal');
 
     Route::get('/restante2/{sucursale_id}', 'SolicitudeController@obtenerSaldoRestante');
 

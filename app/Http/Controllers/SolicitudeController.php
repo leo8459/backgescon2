@@ -722,6 +722,35 @@ class SolicitudeController extends Controller
 }
 
     
-    
+public function cambiarEstado(Request $request, $id)
+{
+    $request->validate([
+        'estado' => 'required|integer|min:1|max:15',
+    ]);
+
+    try {
+        $solicitude = Solicitude::findOrFail($id);
+        $solicitude->estado = $request->estado;
+        $solicitude->save();
+ // Evento::create([
+        //     'accion' => 'Actualizar Estado',
+        //     'descripcion' => "Estado cambiado a {$request->estado}",
+        //     'codigo' => $solicitude->guia,
+        //     'fecha_hora' => now(),
+        // ]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Estado actualizado correctamente.'
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al cambiar el estado.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
     
 }
