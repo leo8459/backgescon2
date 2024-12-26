@@ -508,26 +508,33 @@ class SolicitudeController extends Controller
     public function MandarRegional(Request $request, Solicitude $solicitude)
     {
         try {
+            // Lo demás que ya tenías...
             $solicitude->estado = 8;
-            $solicitude->fecha_envio_regional = $request->fecha_envio_regional ?? now(); // Asigna la fecha actual si no se proporciona
-            $solicitude->encargado_id = $request->encargado_id; // Asignar el cartero de entrega
-            $solicitude->peso_v = $request->peso_v; // Actualizar el peso
-            $solicitude->nombre_d = $request->nombre_d; // Actualizar el peso
+            $solicitude->fecha_envio_regional = $request->fecha_envio_regional ?? now();
+            $solicitude->encargado_id = $request->encargado_id;
+            $solicitude->peso_v = $request->peso_v;
+            $solicitude->nombre_d = $request->nombre_d;
+    
+            // <-- Aquí guardas en la columna 'reencaminamiento' el departamento.
+            if ($request->has('reencaminamiento')) {
+                $solicitude->reencaminamiento = $request->reencaminamiento;
+            }
+    
             $solicitude->save();
+    
             Evento::create([
                 'accion' => 'Despachado',
-                'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,  // Si no hay encargado_id, usa encargado_regional_id
+                'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,
                 'descripcion' => 'Despacho de envio a regional',
                 'codigo' => $solicitude->guia,
                 'fecha_hora' => now(),
             ]);
             return response()->json($solicitude);
-
-            return response()->json(['message' => 'Solicitud marcada como rechazada exitosamente.'], 200);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Error al marcar la solicitud como rechazada.', 'exception' => $e->getMessage()], 500);
         }
     }
+    
     public function EnCaminoRegional(Request $request, Solicitude $solicitude)
     {
         try {
