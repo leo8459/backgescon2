@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SolicitudeController;
+
 Route::post('/login', 'UserController@login'); // Login de Cartero
 
 Route::middleware(['auth:api_cartero'])->group(function () {
@@ -8,7 +10,6 @@ Route::middleware(['auth:api_cartero'])->group(function () {
     Route::apiResource('/users', 'UserController');
     Route::apiResource('/empresas', 'EmpresaController');
     Route::apiResource('/tarifas', 'TarifaController');
-    Route::apiResource('/solicitudes', 'SolicitudeController');
     Route::apiResource('/encargados', 'EncargadoController');
     Route::apiResource('/eventos', 'EventoController');
 
@@ -37,4 +38,7 @@ Route::middleware(['auth:api_cartero'])->group(function () {
 });
 
 
+// Route::get('/ems/estado/{estado}', [SolicitudeController::class, 'solicitudesPorEstado']);
 
+// Route::get('/ems/estado/{estado}', 'SolicitudeController@solicitudesPorEstado');
+Route::apiResource('/solicitudes', 'SolicitudeController');

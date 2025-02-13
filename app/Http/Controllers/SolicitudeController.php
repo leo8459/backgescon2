@@ -42,6 +42,24 @@ class SolicitudeController extends Controller
         $solicitudes = Solicitude::with(['carteroRecogida', 'carteroEntrega', 'sucursale', 'tarifa', 'direccion', 'encargado', 'encargadoregional'])->get();
         return response()->json($solicitudes);
     }
+// ruta: GET /api/solicitudes/estado/{estado}
+public function solicitudesPorEstado($estado)
+{
+    $solicitudes = Solicitude::with([
+        'carteroRecogida',
+        'carteroEntrega',
+        'sucursale',
+        'tarifa',
+        'direccion',
+        'encargado',
+        'encargadoregional'
+    ])
+    ->where('estado', $estado)
+    ->get();
+
+    return response()->json($solicitudes);
+}
+
 
 
     public function store(Request $request)

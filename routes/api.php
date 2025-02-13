@@ -2,6 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ApiController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -19,3 +21,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     Route::post('/sucursales/change-password', 'SucursaleController@changePassword');
 
 });
+// Route::get('/ems/estado/{estado}', 'SolicitudeController@solicitudesPorEstado');
+// Route::get('/ems/estado/{estado}', 'ApiController@solicitudesPorEstado');
+Route::get('/ems/estado/{estado}', [ApiController::class, 'solicitudesPorEstado']);
+Route::put('/solicitudes/reencaminar', [ApiController::class, 'updateReencaminamiento']);
