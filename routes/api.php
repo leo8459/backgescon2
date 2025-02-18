@@ -25,3 +25,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // Route::get('/ems/estado/{estado}', 'ApiController@solicitudesPorEstado');
 Route::get('/ems/estado/{estado}', [ApiController::class, 'solicitudesPorEstado']);
 Route::put('/solicitudes/reencaminar', [ApiController::class, 'updateReencaminamiento']);
+Route::put('/solicitudes/estado', [ApiController::class, 'updateEstadoSolicitud']);
+Route::get('/solicitudes/manifiesto/{manifiesto}', [ApiController::class, 'solicitudesPorManifiesto']);
+Route::get('/solicitudes/buscar-por-codigo/{codigo}', [ApiController::class, 'solicitudPorCodigo']);
