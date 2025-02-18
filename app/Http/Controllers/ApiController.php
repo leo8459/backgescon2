@@ -137,46 +137,70 @@ public function solicitudPorCodigo($codigo)
 
     // 4. Definir un mapeo de códigos a nombre de ciudad
     $ciudadesMap = [
-        'LPB' => 'La Paz (LPB)',
-        'SRZ' => 'Santa Cruz (SRZ)',
-        'CBB' => 'Cochabamba (CBB)',
-        'ORU' => 'Oruro (ORU)',
-        'PTI' => 'Potosí (PTI)',
-        'TJA' => 'Tarija (TJA)',
-        'SRE' => 'Sucre (SRE)',
-        'BEN' => 'Trinidad (TDD)', // Aquí hay variaciones, ajusta según necesites
-        'CIJ' => 'Cobija (CIJ)',
+        'LPB' => 'LA PAZ (LPB)',
+        'SRZ' => 'SANTA CRUZ (SRZ)',
+        'CBB' => 'COCHABAMBA (CBB)',
+        'ORU' => 'ORURO (ORU)',
+        'PTI' => 'POTOSÍ (PTI)',
+        'TJA' => 'TARIJA (TJA)',
+        'SRE' => 'SUCRE (SRE)',
+        'BEN' => 'TRINIDAD (TDD)', // Aquí hay variaciones, ajusta según necesites
+        'CIJ' => 'COBIJA (CIJ)',
     ];
 
     // 5. Determinar la ciudad final, usando reencaminamiento o extraer el 2do código del "CODIGO"
     if (! empty($solicitud->reencaminamiento)) {
-        // 5A. Si hay reencaminamiento, mapeamos ese código
         $codigoCiudad = strtoupper($solicitud->reencaminamiento);
     } else {
-        // 5B. Analizar el "CODIGO" original (guía) para extraer el segundo bloque de 3 caracteres
-        //     Ej: 0005LPBCBB0029 -> 
-        //         - primer bloque (4 primeros dígitos): 0005 
-        //         - segundo bloque (3 siguientes): LPB 
-        //         - tercer bloque (3 siguientes): CBB 
-        //         El "segundo" podría ser este que inicia en posición 7.
-        //     Ajusta según tu formato real.
-
-        // Aquí suponemos que el segundo código es el que va de la posición 7 a la 9 (tres caracteres)
-        $codigoCiudad = substr($codigo, 7, 3);
-        $codigoCiudad = strtoupper($codigoCiudad);
+        $codigoCiudad = strtoupper(substr($codigo, 7, 3));
     }
 
-    // 6. Tomar el nombre de la ciudad desde $ciudadesMap si existe
-    $nombreCiudad = $ciudadesMap[$codigoCiudad] ?? 'Desconocida';
+    // 6. Tomar solo el nombre de la ciudad en mayúsculas
+    $nombreCiudad = isset($ciudadesMap[$codigoCiudad]) ? explode(' (', $ciudadesMap[$codigoCiudad])[0] : 'DESCONOCIDA';
 
     // 7. Devolver los datos solicitados
     return response()->json([
-        'CODIGO'       => $solicitud->guia,            // Renombrado a CODIGO en la respuesta
+        'CODIGO'       => $solicitud->guia,
         'destinatario' => $solicitud->destinatario,
         'estado'       => $solicitud->estado,
         'telefono_d'   => $solicitud->telefono_d,
         'peso'         => $peso,
-        'ciudad'       => $nombreCiudad,
+        'ciudad'       => $nombreCiudad, // Ahora sin paréntesis
+    ], 200);
+}
+
+
+public function cambiarEstadoPorGuia(Request $request)
+{
+    // Validar que se envíe la guía y el nuevo estado
+    $request->validate([
+        'guia' => 'required|string|max:255',
+        'estado' => 'required|integer'
+    ]);
+
+    // Buscar la solicitud por la guía
+    $solicitud = Solicitude::where('guia', $request->guia)->first();
+
+    if (!$solicitud) {
+        return response()->json(['message' => 'Solicitud no encontrada'], 404);
+    }
+
+    // Actualizar el estado de la solicitud
+    $solicitud->estado = $request->estado;
+    $solicitud->save();
+
+    // Registrar el evento de "Despachado"
+    Evento::create([
+        'accion' => 'Despachado',
+        // 'cartero_id' => $solicitud->cartero_entrega_id ?? $solicitud->cartero_recogida_id,  // Usa cartero_entrega_id si existe, sino cartero_recogida_id
+        'descripcion' => 'Envío en camino',
+        'codigo' => $solicitud->guia,
+        'fecha_hora' => now(),
+    ]);
+
+    return response()->json([
+        'message' => 'Estado actualizado y evento registrado correctamente',
+        'solicitud' => $solicitud
     ], 200);
 }
 
