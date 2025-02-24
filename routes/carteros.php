@@ -12,6 +12,8 @@ Route::middleware(['auth:api_cartero'])->group(function () {
     Route::apiResource('/tarifas', 'TarifaController');
     Route::apiResource('/encargados', 'EncargadoController');
     Route::apiResource('/eventos', 'EventoController');
+    Route::apiResource('/sucursales', 'SucursaleController');
+    Route::apiResource('/direcciones', 'DireccioneController')->parameters(['direcciones' => 'direccione']);  //editar agragar eliminar listar apiresource
 
     Route::put('/solicitudesrecojo/{solicitude}', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega/{solicitude}', 'SolicitudeController@markAsEntregado');
@@ -35,6 +37,8 @@ Route::middleware(['auth:api_cartero'])->group(function () {
     Route::get('/Csolicitudes-estado-2-hoy', 'DashboardCarteroController@solicitudesEstado2Hoy');
     Route::get('/Csolicitudes-estado-3-hoy', 'DashboardCarteroController@solicitudesEstado3Hoy');
     Route::get('/Csolicitudes-estado-5-hoy', 'DashboardCarteroController@solicitudesEstado5Hoy');
+    Route::post('/solicitudes/generar-codigo-barras', 'SolicitudeController@generateBarcode');
+    Route::post('/generar-guia', 'SolicitudeController@generateGuia');
 });
 
 

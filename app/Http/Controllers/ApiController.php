@@ -172,11 +172,14 @@ public function solicitudPorCodigo($codigo)
 
 public function cambiarEstadoPorGuia(Request $request)
 {
-    // Validar que se envíe la guía y el nuevo estado
-    $request->validate([
-        'guia' => 'required|string|max:255',
-        'estado' => 'required|integer'
-    ]);
+    // // Validar que se envíen los datos necesarios
+    // $request->validate([
+    //     'guia' => 'required|string|max:255',
+    //     'estado' => 'required|integer',
+    //     'cartero_entrega_id' => 'required|integer|exists:carteros,id',
+    //     'entrega_observacion' => 'nullable|string',
+    //     'usercartero' => 'required|string|max:255'
+    // ]);
 
     // Buscar la solicitud por la guía
     $solicitud = Solicitude::where('guia', $request->guia)->first();
@@ -185,17 +188,23 @@ public function cambiarEstadoPorGuia(Request $request)
         return response()->json(['message' => 'Solicitud no encontrada'], 404);
     }
 
-    // Actualizar el estado de la solicitud
+    // Actualizar el estado de la solicitud y otros campos
     $solicitud->estado = $request->estado;
+    $solicitud->cartero_entrega_id = $request->cartero_entrega_id;
+    $solicitud->entrega_observacion = $request->entrega_observacion;
+    $solicitud->usercartero = $request->usercartero;
     $solicitud->save();
 
-    // Registrar el evento de "Despachado"
+    // Registrar el evento de actualización
     Evento::create([
-        'accion' => 'Despachado',
-        // 'cartero_id' => $solicitud->cartero_entrega_id ?? $solicitud->cartero_recogida_id,  // Usa cartero_entrega_id si existe, sino cartero_recogida_id
-        'descripcion' => 'Envío en camino',
+        'accion' => 'Actualización de estado',
+        'descripcion' => 'Actualización de estado a VENTANILLA',
         'codigo' => $solicitud->guia,
+        'cartero_id' => $solicitud->cartero_entrega_id ?? $solicitud->cartero_recogida_id,
         'fecha_hora' => now(),
+        'user_id' => $request->user_id ?? auth()->id(),
+        'observaciones' => $request->entrega_observacion ?? '',
+        'usercartero' => $request->usercartero
     ]);
 
     return response()->json([
@@ -203,6 +212,7 @@ public function cambiarEstadoPorGuia(Request $request)
         'solicitud' => $solicitud
     ], 200);
 }
+
 
 
 
