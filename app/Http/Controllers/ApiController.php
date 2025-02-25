@@ -195,17 +195,17 @@ public function cambiarEstadoPorGuia(Request $request)
     $solicitud->usercartero = $request->usercartero;
     $solicitud->save();
 
-    // Registrar el evento de actualización
-    Evento::create([
-        'accion' => 'Actualización de estado',
-        'descripcion' => 'Actualización de estado a VENTANILLA',
-        'codigo' => $solicitud->guia,
-        'cartero_id' => $solicitud->cartero_entrega_id ?? $solicitud->cartero_recogida_id,
-        'fecha_hora' => now(),
-        'user_id' => $request->user_id ?? auth()->id(),
-        'observaciones' => $request->entrega_observacion ?? '',
-        'usercartero' => $request->usercartero
-    ]);
+    // // Registrar el evento de actualización
+    // Evento::create([
+    //     'accion' => 'Actualización de estado',
+    //     'descripcion' => 'Actualización de estado a VENTANILLA',
+    //     'codigo' => $solicitud->guia,
+    //     'cartero_id' => $solicitud->cartero_entrega_id ?? $solicitud->cartero_recogida_id,
+    //     'fecha_hora' => now(),
+    //     'user_id' => $request->user_id ?? auth()->id(),
+    //     'observaciones' => $request->entrega_observacion ?? '',
+    //     'usercartero' => $request->usercartero
+    // ]);
 
     return response()->json([
         'message' => 'Estado actualizado y evento registrado correctamente',
