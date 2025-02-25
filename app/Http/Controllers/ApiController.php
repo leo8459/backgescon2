@@ -172,39 +172,51 @@ public function solicitudPorCodigo($codigo)
 
 public function cambiarEstadoPorGuia(Request $request)
 {
-    
-
-    // Buscar la solicitud por la guía
+    // 1. Buscar la solicitud por la guía
     $solicitud = Solicitude::where('guia', $request->guia)->first();
 
     if (!$solicitud) {
         return response()->json(['message' => 'Solicitud no encontrada'], 404);
     }
 
-    // Actualizar el estado de la solicitud y otros campos
-    $solicitud->estado = $request->estado;
-    $solicitud->cartero_entrega_id = $request->cartero_entrega_id;
+    // 2. Inicializar carteroId en null. Luego buscamos si usercartero coincide con la columna 'nombre'
+    $carteroId = null;
+
+    if (!empty($request->usercartero)) {
+        // Buscar en la tabla 'carteros' donde 'nombre' coincida exactamente con lo que llega en usercartero
+        $carteroMatch = \App\Models\Cartero::where('nombre', $request->usercartero)->first();
+
+        if ($carteroMatch) {
+            $carteroId = $carteroMatch->id;
+        }
+    }
+
+    // 3. Actualizar la solicitud
+    $solicitud->estado              = $request->estado;
+    $solicitud->cartero_entrega_id  = $carteroId; 
     $solicitud->entrega_observacion = $request->entrega_observacion;
-    $solicitud->usercartero = $request->usercartero;
+    $solicitud->usercartero         = $request->usercartero;
     $solicitud->save();
 
-    // Registrar el evento con datos directamente del request
+    // 4. Registrar el evento
     Evento::create([
-        'accion'      => $request->action, // Toma la acción directamente del PUT
-        'descripcion' => 'Actualización de estado a ' . $request->estado, // Descripción del cambio
-        'codigo'      => $solicitud->guia, // El código es la guía
-        'cartero_id'  => $solicitud->cartero_entrega_id ?? $solicitud->cartero_recogida_id, // ID del cartero
-        'fecha_hora'  => now(), // Fecha y hora actual
-        // 'user_id'     => $request->user_id ?? Auth::id(), // ID del usuario autenticado
-        'observaciones' => $request->entrega_observacion ?? '', // Observaciones adicionales
-        'usercartero' => $request->usercartero // Usuario cartero que realiza la acción
+        'accion'        => $request->action,
+        'descripcion'   => 'Actualización de estado a ' . $request->estado,
+        'codigo'        => $solicitud->guia, 
+        'cartero_id'    => $carteroId,       // ID del cartero (si lo encontró)
+        'fecha_hora'    => now(),
+        'observaciones' => $request->entrega_observacion ?? '',
+        'usercartero'   => $request->usercartero
     ]);
 
     return response()->json([
-        'message' => 'Estado actualizado y evento registrado correctamente',
+        'message'   => 'Estado actualizado y evento registrado correctamente',
         'solicitud' => $solicitud
     ], 200);
 }
+
+
+
 
 
 
