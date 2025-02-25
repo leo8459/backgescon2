@@ -172,14 +172,7 @@ public function solicitudPorCodigo($codigo)
 
 public function cambiarEstadoPorGuia(Request $request)
 {
-    // // Validar que se envíen los datos necesarios
-    // $request->validate([
-    //     'guia' => 'required|string|max:255',
-    //     'estado' => 'required|integer',
-    //     'cartero_entrega_id' => 'required|integer|exists:carteros,id',
-    //     'entrega_observacion' => 'nullable|string',
-    //     'usercartero' => 'required|string|max:255'
-    // ]);
+    
 
     // Buscar la solicitud por la guía
     $solicitud = Solicitude::where('guia', $request->guia)->first();
@@ -195,23 +188,24 @@ public function cambiarEstadoPorGuia(Request $request)
     $solicitud->usercartero = $request->usercartero;
     $solicitud->save();
 
-    // // Registrar el evento de actualización
-    // Evento::create([
-    //     'accion' => 'Actualización de estado',
-    //     'descripcion' => 'Actualización de estado a VENTANILLA',
-    //     'codigo' => $solicitud->guia,
-    //     'cartero_id' => $solicitud->cartero_entrega_id ?? $solicitud->cartero_recogida_id,
-    //     'fecha_hora' => now(),
-    //     'user_id' => $request->user_id ?? auth()->id(),
-    //     'observaciones' => $request->entrega_observacion ?? '',
-    //     'usercartero' => $request->usercartero
-    // ]);
+    // Registrar el evento con datos directamente del request
+    Evento::create([
+        'accion'      => $request->action, // Toma la acción directamente del PUT
+        'descripcion' => 'Actualización de estado a ' . $request->estado, // Descripción del cambio
+        'codigo'      => $solicitud->guia, // El código es la guía
+        'cartero_id'  => $solicitud->cartero_entrega_id ?? $solicitud->cartero_recogida_id, // ID del cartero
+        'fecha_hora'  => now(), // Fecha y hora actual
+        // 'user_id'     => $request->user_id ?? Auth::id(), // ID del usuario autenticado
+        'observaciones' => $request->entrega_observacion ?? '', // Observaciones adicionales
+        'usercartero' => $request->usercartero // Usuario cartero que realiza la acción
+    ]);
 
     return response()->json([
         'message' => 'Estado actualizado y evento registrado correctamente',
         'solicitud' => $solicitud
     ], 200);
 }
+
 
 
 
