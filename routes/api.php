@@ -29,3 +29,4 @@ Route::put('/solicitudes/estado', [ApiController::class, 'updateEstadoSolicitud'
 Route::get('/solicitudes/manifiesto/{manifiesto}', [ApiController::class, 'solicitudesPorManifiesto']);
 Route::get('/solicitudes/buscar-por-codigo/{codigo}', [ApiController::class, 'solicitudPorCodigo']);
 Route::put('/solicitudes/cambiar-estado', [ApiController::class, 'cambiarEstadoPorGuia']);
+Route::put('/solicitud/actualizar-estado', [ApiController::class, 'actualizarEstadoConFirma']);

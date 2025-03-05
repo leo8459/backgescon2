@@ -215,8 +215,43 @@ public function cambiarEstadoPorGuia(Request $request)
     ], 200);
 }
 
+public function actualizarEstadoConFirma(Request $request)
+{
+    // Registrar la solicitud recibida
+    Log::info('Solicitud recibida para actualizar estado:', $request->all());
 
+    // Buscar la solicitud por el número de guía
+    $solicitud = Solicitude::where('guia', $request->codigo)->first();
 
+    if (!$solicitud) {
+        Log::error('Solicitud no encontrada en la base de datos', ['codigo' => $request->codigo]);
+        return response()->json(['message' => 'Solicitud no encontrada'], 404);
+    }
+
+    try {
+        // Actualizar los datos
+        $solicitud->estado = $request->estado;
+        $solicitud->firma_d = $request->firma_d;
+        $solicitud->entrega_observacion = $request->observacion_entrega;
+        $solicitud->imagen = $request->imagen;
+        $solicitud->save();
+
+        // Log de éxito
+        Log::info('Estado actualizado correctamente', ['codigo' => $solicitud->guia]);
+
+        return response()->json([
+            'message' => 'Estado actualizado correctamente',
+            'solicitud' => $solicitud
+        ], 200);
+    } catch (\Exception $e) {
+        // Registrar el error si ocurre una excepción
+        Log::error('Error al actualizar la solicitud', [
+            'codigo' => $request->codigo,
+            'error' => $e->getMessage()
+        ]);
+        return response()->json(['message' => 'Error al actualizar la solicitud'], 500);
+    }
+}
 
 
 
