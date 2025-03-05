@@ -218,14 +218,14 @@ public function cambiarEstadoPorGuia(Request $request)
 public function actualizarEstadoConFirma(Request $request)
 {
     try {
-        // Validar los datos del request
-        $request->validate([
-            'guia'               => 'required|string|max:255',
-            'estado'             => 'required|integer',
-            'firma_d'            => 'nullable|string',
-            'entrega_observacion' => 'nullable|string|max:255',
-            'imagen'             => 'nullable|image|max:5120', // Imagen de hasta 5MB
-        ]);
+        // Validar los datos que llegan en el request
+        // $request->validate([
+        //     'guia'               => 'required|string|max:255',
+        //     'estado'             => 'required|integer',
+        //     'firma_d'            => 'nullable|string',
+        //     'entrega_observacion'=> 'nullable|string|max:255',
+        //     'imagen'             => 'nullable|string',  // <= Ya NO es "image", sino string
+        // ]);
 
         // Buscar la solicitud por la guía
         $solicitud = Solicitude::where('guia', $request->guia)->first();
@@ -234,40 +234,54 @@ public function actualizarEstadoConFirma(Request $request)
             return response()->json(['message' => 'Solicitud no encontrada'], 404);
         }
 
-        // Procesar la imagen si se envió
+        // Procesar la cadena Base64 de la imagen, si la trae
         $imageBase64 = null;
-        if ($request->hasFile('imagen')) {
-            $image = Image::make($request->file('imagen'))->resize(800, 600)->encode('data-url');
-            $imageBase64 = (string) $image; // Convertimos a Base64
+        if ($request->imagen) {
+            // La cadena normalmente viene con formato "data:image/png;base64,xxx..."
+            $data = explode(',', $request->imagen);
+
+            // Verificamos que tenga dos partes: "data:image..." y la parte base64
+            if (count($data) === 2) {
+                // Decodificamos la segunda parte
+                $decoded = base64_decode($data[1]);
+
+                // Si deseas redimensionar/transformar la imagen con Intervention, hazlo así:
+                $image = \Image::make($decoded)
+                    ->resize(800, 600)      // ejemplo de redimensión
+                    ->encode('data-url');   // la vuelve a convertir a dataURL
+
+                // Guardamos esa cadena final como base64
+                $imageBase64 = (string) $image; 
+            } else {
+                // Si la cadena no tiene el formato esperado, podrías manejarlo distinto,
+                // o directamente guardar la que te llega para no perderla:
+                $imageBase64 = $request->imagen;
+            }
         }
 
         // Actualizar la solicitud con los nuevos campos
         $solicitud->estado              = $request->estado;
-        $solicitud->firma_d             = $request->firma_d;
+        $solicitud->firma_d             = $request->firma_d; 
         $solicitud->entrega_observacion = $request->entrega_observacion;
-        $solicitud->imagen              = $imageBase64;
+        $solicitud->imagen              = $imageBase64; // AQUI guardas la imagen en tu campo
         $solicitud->save();
 
-        // Registrar el evento
-        // Evento::create([
-        //     'accion'        => 'ACTUALIZACIÓN ESTADO',
-        //     'descripcion'   => 'Se actualizó el estado de la solicitud a ' . $request->estado,
-        //     'codigo'        => $solicitud->guia,
-        //     'fecha_hora'    => now(),
-        //     'observaciones' => $request->entrega_observacion ?? '',
-        // ]);
+        // (Opcional) Crear algún evento o bitácora si lo deseas
+        // Evento::create([...]);
 
         return response()->json([
             'message'   => 'Estado actualizado correctamente',
             'solicitud' => $solicitud
         ], 200);
+
     } catch (\Exception $e) {
         return response()->json([
-            'error' => 'Error al actualizar la solicitud',
+            'error'   => 'Error al actualizar la solicitud',
             'detalle' => $e->getMessage()
         ], 500);
     }
 }
+
 
 
 
