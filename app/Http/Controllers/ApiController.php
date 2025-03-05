@@ -217,41 +217,59 @@ public function cambiarEstadoPorGuia(Request $request)
 
 public function actualizarEstadoConFirma(Request $request)
 {
-    // Registrar la solicitud recibida
-    Log::info('Solicitud recibida para actualizar estado:', $request->all());
-
-    // Buscar la solicitud por el número de guía
-    $solicitud = Solicitude::where('guia', $request->codigo)->first();
-
-    if (!$solicitud) {
-        Log::error('Solicitud no encontrada en la base de datos', ['codigo' => $request->codigo]);
-        return response()->json(['message' => 'Solicitud no encontrada'], 404);
-    }
-
     try {
-        // Actualizar los datos
-        $solicitud->estado = $request->estado;
-        $solicitud->firma_d = $request->firma_d;
-        $solicitud->entrega_observacion = $request->observacion_entrega;
-        $solicitud->imagen = $request->imagen;
+        // Validar los datos del request
+        $request->validate([
+            'guia'               => 'required|string|max:255',
+            'estado'             => 'required|integer',
+            'firma_d'            => 'nullable|string',
+            'entrega_observacion' => 'nullable|string|max:255',
+            'imagen'             => 'nullable|image|max:5120', // Imagen de hasta 5MB
+        ]);
+
+        // Buscar la solicitud por la guía
+        $solicitud = Solicitude::where('guia', $request->guia)->first();
+
+        if (!$solicitud) {
+            return response()->json(['message' => 'Solicitud no encontrada'], 404);
+        }
+
+        // Procesar la imagen si se envió
+        $imageBase64 = null;
+        if ($request->hasFile('imagen')) {
+            $image = Image::make($request->file('imagen'))->resize(800, 600)->encode('data-url');
+            $imageBase64 = (string) $image; // Convertimos a Base64
+        }
+
+        // Actualizar la solicitud con los nuevos campos
+        $solicitud->estado              = $request->estado;
+        $solicitud->firma_d             = $request->firma_d;
+        $solicitud->entrega_observacion = $request->entrega_observacion;
+        $solicitud->imagen              = $imageBase64;
         $solicitud->save();
 
-        // Log de éxito
-        Log::info('Estado actualizado correctamente', ['codigo' => $solicitud->guia]);
+        // Registrar el evento
+        // Evento::create([
+        //     'accion'        => 'ACTUALIZACIÓN ESTADO',
+        //     'descripcion'   => 'Se actualizó el estado de la solicitud a ' . $request->estado,
+        //     'codigo'        => $solicitud->guia,
+        //     'fecha_hora'    => now(),
+        //     'observaciones' => $request->entrega_observacion ?? '',
+        // ]);
 
         return response()->json([
-            'message' => 'Estado actualizado correctamente',
+            'message'   => 'Estado actualizado correctamente',
             'solicitud' => $solicitud
         ], 200);
     } catch (\Exception $e) {
-        // Registrar el error si ocurre una excepción
-        Log::error('Error al actualizar la solicitud', [
-            'codigo' => $request->codigo,
-            'error' => $e->getMessage()
-        ]);
-        return response()->json(['message' => 'Error al actualizar la solicitud'], 500);
+        return response()->json([
+            'error' => 'Error al actualizar la solicitud',
+            'detalle' => $e->getMessage()
+        ], 500);
     }
 }
+
+
 
 
 
