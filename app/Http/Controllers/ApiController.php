@@ -271,15 +271,15 @@ public function actualizarEstadoConFirma(Request $request)
         };
 
         // Registrar el evento
-        Evento::create([
-            'accion'        => $request->action,
-            'descripcion'   => $descripcionEstado,
-            'codigo'        => $solicitud->guia, 
-            'cartero_id'    => $carteroId,       // ID del cartero (si lo encontró)
-            'fecha_hora'    => now(),
-            'observaciones' => $request->entrega_observacion ?? '',
-            'usercartero'   => $request->usercartero
-        ]);
+        // Evento::create([
+        //     'accion'        => $request->action,
+        //     'descripcion'   => $descripcionEstado,
+        //     'codigo'        => $solicitud->guia, 
+        //     'cartero_id'    => $carteroId,       // ID del cartero (si lo encontró)
+        //     'fecha_hora'    => now(),
+        //     'observaciones' => $request->entrega_observacion ?? '',
+        //     'usercartero'   => $request->usercartero
+        // ]);
 
         return response()->json([
             'message'   => 'Estado actualizado correctamente',
