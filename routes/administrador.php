@@ -14,6 +14,7 @@ Route::middleware(['auth:api_admin'])->group(function () {
     Route::apiResource('/gestore1', 'GestoreController')->parameters(['gestore1' => 'gestore']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/contrato1', 'ContratosController')->parameters(['contrato1' => 'contrato']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/direcciones1', 'DireccioneController')->parameters(['direcciones1' => 'direccione']);  //editar agragar eliminar listar apiresource
+    Route::apiResource('/codigos', 'CodigoController');  //editar agragar eliminar listar apiresource
 
     Route::put('/solicitudesrecojo/{solicitude}/', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega/{solicitude}/', 'SolicitudeController@markAsEntregado');

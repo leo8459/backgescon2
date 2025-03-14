@@ -199,9 +199,16 @@ public function cambiarEstadoPorGuia(Request $request)
     $solicitud->save();
 
     // 4. Registrar el evento
+    $descripcionEstado = match ($request->estado) {
+        2 => 'En camino',
+        5 => 'Inventario',
+        default => 'Actualización de estado a ' . $request->estado,
+    };
+    
+    // Registrar el evento
     Evento::create([
         'accion'        => $request->action,
-        'descripcion'   => 'Actualización de estado a ' . $request->estado,
+        'descripcion'   => $descripcionEstado,
         'codigo'        => $solicitud->guia, 
         'cartero_id'    => $carteroId,       // ID del cartero (si lo encontró)
         'fecha_hora'    => now(),
@@ -225,6 +232,7 @@ public function actualizarEstadoConFirma(Request $request)
             'firma_d'            => 'nullable|string',
             'entrega_observacion'=> 'nullable|string|max:255',
             'imagen'             => 'nullable|string',  // Se espera en formato Base64
+            'usercartero'        => 'nullable|string|max:255',
         ]);
 
         // Buscar la solicitud por la guía
@@ -234,14 +242,44 @@ public function actualizarEstadoConFirma(Request $request)
             return response()->json(['message' => 'Solicitud no encontrada'], 404);
         }
 
-       
+        // Inicializar carteroId en null y buscar si usercartero coincide con la columna 'nombre'
+        $carteroId = null;
+
+        if (!empty($request->usercartero)) {
+            // Buscar en la tabla 'carteros' donde 'nombre' coincida exactamente con lo que llega en usercartero
+            $carteroMatch = \App\Models\Cartero::where('nombre', $request->usercartero)->first();
+
+            if ($carteroMatch) {
+                $carteroId = $carteroMatch->id;
+            }
+        }
 
         // Actualizar la solicitud con los nuevos datos
         $solicitud->estado              = $request->estado;
         $solicitud->firma_d             = $request->firma_d;
         $solicitud->entrega_observacion = $request->entrega_observacion;
-        $solicitud->imagen = $request->imagen;
+        $solicitud->imagen              = $request->imagen;
+        $solicitud->cartero_entrega_id  = $carteroId;
+        $solicitud->usercartero         = $request->usercartero;
         $solicitud->save();
+
+        // Definir la descripción basada en el estado
+        $descripcionEstado = match ($request->estado) {
+            3 => 'Entregado',
+            5 => 'Inventario',
+            default => 'Actualización de estado a ' . $request->estado,
+        };
+
+        // Registrar el evento
+        Evento::create([
+            'accion'        => $request->action,
+            'descripcion'   => $descripcionEstado,
+            'codigo'        => $solicitud->guia, 
+            'cartero_id'    => $carteroId,       // ID del cartero (si lo encontró)
+            'fecha_hora'    => now(),
+            'observaciones' => $request->entrega_observacion ?? '',
+            'usercartero'   => $request->usercartero
+        ]);
 
         return response()->json([
             'message'   => 'Estado actualizado correctamente',
@@ -255,6 +293,7 @@ public function actualizarEstadoConFirma(Request $request)
         ], 500);
     }
 }
+
 
 
 
