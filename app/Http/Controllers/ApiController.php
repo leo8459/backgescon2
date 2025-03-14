@@ -225,62 +225,62 @@ public function cambiarEstadoPorGuia(Request $request)
 public function actualizarEstadoConFirma(Request $request)
 {
     try {
-        // Agrega 'action' y 'user_id' a la validación si piensas recibirlos
+        // Validar los datos del request
         $request->validate([
-            'guia'                => 'required|string|max:255',
-            'estado'              => 'required|integer',
-            'firma_d'             => 'nullable|string',
-            'entrega_observacion' => 'nullable|string|max:255',
-            'imagen'              => 'nullable|string',  // Se espera en formato Base64
-            'usercartero'         => 'nullable|string|max:255',
-            'action'              => 'nullable|string|max:255', 
-            'user_id'             => 'nullable|integer',
+            'guia'               => 'required|string|max:255',
+            'estado'             => 'required|integer',
+            'firma_d'            => 'nullable|string',
+            'entrega_observacion'=> 'nullable|string|max:255',
+            'imagen'             => 'nullable|string',  // Se espera en formato Base64
+            'usercartero'        => 'nullable|string|max:255',
         ]);
 
-        // 1. Buscar la solicitud por la guía
+        // 1) Buscar la solicitud por la guía
         $solicitud = Solicitude::where('guia', $request->guia)->first();
 
         if (!$solicitud) {
             return response()->json(['message' => 'Solicitud no encontrada'], 404);
         }
 
-        // 2. Inicializar carteroId en null y buscar si usercartero coincide con la columna 'nombre'
+        // 2) Determinar el cartero_id en base a usercartero
         $carteroId = null;
         if (!empty($request->usercartero)) {
+            // Busca coincidencia exacta en la columna 'nombre'
             $carteroMatch = \App\Models\Cartero::where('nombre', $request->usercartero)->first();
             if ($carteroMatch) {
                 $carteroId = $carteroMatch->id;
             }
         }
 
-        // 3. Actualizar la solicitud con los nuevos datos
+        // 3) Actualizar campos en Solicitude
         $solicitud->estado              = $request->estado;
         $solicitud->firma_d             = $request->firma_d;
         $solicitud->entrega_observacion = $request->entrega_observacion;
         $solicitud->imagen              = $request->imagen;
         $solicitud->cartero_entrega_id  = $carteroId;
         $solicitud->usercartero         = $request->usercartero;
-        // Si deseas guardar 'action' y 'user_id' en la tabla solicitudes,
-        // debes asegurarte de tener esos campos. De lo contrario, omite estas líneas:
-        // $solicitud->action         = $request->action;
-        // $solicitud->user_id        = $request->user_id;
-
         $solicitud->save();
 
-        // 4. Definir la descripción basada en el estado
+        // 4) Definir la descripción y la acción a guardar en Evento
+        //    (Aquí forzamos que, si estado=3, la acción sea "ENVIO ENTREGADO", etc.)
         $descripcionEstado = match ($request->estado) {
             3 => 'Entregado',
             5 => 'Inventario',
             default => 'Actualización de estado a ' . $request->estado,
         };
 
-        // 5. Registrar el evento
+        $accionEvento = match ($request->estado) {
+            3 => 'ENVIO ENTREGADO',
+            5 => 'ENVIO INVENTARIO',
+            default => 'ESTADO ' . $request->estado,
+        };
+
+        // 5) Registrar el evento
         Evento::create([
-            'accion'       => $request->action,  // la acción que se está recibiendo en la request
+            'accion'       => $accionEvento,               // Aquí forzamos el texto
             'descripcion'  => $descripcionEstado,
             'codigo'       => $solicitud->guia,
-            'cartero_id'   => $carteroId,  // ID del cartero (si lo encontró)
-            'user_id'      => $request->user_id, // Asegúrate de que en la tabla 'eventos' exista esta columna
+            'cartero_id'   => $carteroId,                  // Cartero asociado
             'fecha_hora'   => now(),
             'observaciones'=> $request->entrega_observacion ?? '',
             'usercartero'  => $request->usercartero,
@@ -298,6 +298,7 @@ public function actualizarEstadoConFirma(Request $request)
         ], 500);
     }
 }
+
 
 
 
