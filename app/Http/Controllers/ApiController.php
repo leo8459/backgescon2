@@ -242,7 +242,14 @@ public function actualizarEstadoConFirma(Request $request)
             return response()->json(['message' => 'Solicitud no encontrada'], 404);
         }
 
-        // 2) Determinar el cartero_id en base a usercartero
+        // 2) Actualizar los campos de la Solicitude
+        $solicitud->estado              = $request->estado;
+        $solicitud->firma_d             = $request->firma_d;
+        $solicitud->entrega_observacion = $request->entrega_observacion;
+        $solicitud->imagen              = $request->imagen;
+        $solicitud->usercartero         = $request->usercartero;
+
+        // (Opcional) buscar cartero si deseas actualizarlo en la solicitud
         $carteroId = null;
         if (!empty($request->usercartero)) {
             // Busca coincidencia EXACTA en la columna 'nombre'
@@ -251,36 +258,31 @@ public function actualizarEstadoConFirma(Request $request)
                 $carteroId = $carteroMatch->id;
             }
         }
+        // Asignar solo si deseas que la solicitud siempre lleve el cartero_entrega_id  
+        $solicitud->cartero_entrega_id = $carteroId;
 
-        // 3) Actualizar los campos en Solicitude
-        $solicitud->estado              = $request->estado;
-        $solicitud->firma_d             = $request->firma_d;
-        $solicitud->entrega_observacion = $request->entrega_observacion;
-        $solicitud->imagen              = $request->imagen;
-        $solicitud->cartero_entrega_id  = $carteroId;   // Se asigna si se encontró cartero
-        $solicitud->usercartero         = $request->usercartero;
+        // 3) Guardar la solicitud
         $solicitud->save();
 
-        // 4) Definir texto y acción (ejemplo)
+        // 4) Definir descripción y acción (si necesitas un texto específico)
         $descripcionEstado = match ($request->estado) {
             3 => 'Entregado',
             5 => 'Inventario',
             default => 'Actualización de estado a ' . $request->estado,
         };
 
-        // Si deseas un texto específico en 'accion' (columna del Evento) cuando sea estado=3:
         $accionEvento = match ($request->estado) {
-            3 => 'Envio Entregado',
-            5 => 'ENVIO INVENTARIO',
+            3 => 'ENVÍO ENTREGADO',
+            5 => 'ENVÍO INVENTARIO',
             default => 'ESTADO ' . $request->estado,
         };
 
-        // 5) Registrar el evento (tabla eventos)
+        // 5) Registrar el evento tomando cartero_id de lo que se guardó en la solicitud
         Evento::create([
             'accion'       => $accionEvento,
             'descripcion'  => $descripcionEstado,
             'codigo'       => $solicitud->guia,
-            'cartero_id'   => $carteroId, // Se asigna si se encontró cartero
+            'cartero_id'   => $solicitud->cartero_entrega_id, // <--- Aquí tomamos ya del registro guardado
             'fecha_hora'   => now(),
             'observaciones'=> $request->entrega_observacion ?? '',
             'usercartero'  => $request->usercartero,
@@ -298,6 +300,7 @@ public function actualizarEstadoConFirma(Request $request)
         ], 500);
     }
 }
+
 
 
 
