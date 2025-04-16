@@ -48,6 +48,7 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
     Route::get('/direcciones', 'SolicitudeController@getDirecciones');
 
     Route::get('/descargar-plantilla', 'SolicitudeController@descargarPlantilla');
+    Route::get('/solicitudes/alquileres', 'SolicitudeController@obtenerAlquileres');
 
 
 
