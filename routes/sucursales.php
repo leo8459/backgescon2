@@ -13,6 +13,8 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
     Route::apiResource('/encargados2', 'EncargadoController')->parameters(['encargados2' => 'encargado']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/carteros2', 'CarteroController')->parameters(['carteros2' => 'cartero']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/direcciones2', 'DireccioneController')->parameters(['direcciones2' => 'direccione']);  //editar agragar eliminar listar apiresource
+    Route::apiResource('/eventos2', 'EventoController');
+    // Route::post('/sucursales/change-password', 'SucursaleController@changePassword');
 
 
 
@@ -27,6 +29,8 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
 
 
     // TODOS LOS GETS
+    Route::get('/restantesaldo2', 'SolicitudeController@obtenerSaldoRestanteSucursalActual');
+    Route::get('/sucursales/eventos20/sucursal', 'EventoController@eventosPorSucursal');
 
     Route::get('/restante2/{sucursale_id}', 'SolicitudeController@obtenerSaldoRestante');
 
@@ -42,13 +46,16 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
 
     Route::get('/solicitudes/buscar-por-codigo-barras', 'SolicitudeController@buscarPorCodigoBarras');
     Route::get('/direcciones', 'SolicitudeController@getDirecciones');
-    Route::get('/solicitudes/alquileres', 'SolicitudeController@obtenerAlquileres');
 
+    Route::get('/descargar-plantilla', 'SolicitudeController@descargarPlantilla');
 
 
 
     // TODOS LOS POST
     Route::post('/solicitudes/generar-codigo-barras', 'SolicitudeController@generateBarcode');
     Route::post('/generar-guia', 'SolicitudeController@generateGuia');
+    Route::post('/solicitudes2/carga-masiva', 'SolicitudeController@cargaMasiva');
+
 });
 Route::post('/login2', 'SucursaleController@login2');
+Route::post('/sucursales/change-password', 'SucursaleController@changePassword');
