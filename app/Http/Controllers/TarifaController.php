@@ -37,7 +37,7 @@ class TarifaController extends Controller
         $tarifa->dias_entrega = $request->dias_entrega;//nacional
         $tarifa->descuento = $request->descuento;//nacional
         // $tarifa->hora_pedido = $request->hora_pedido;//nacional
-        $tarifa->estado = $request->estado ?? 1;
+        // $tarifa->estado = $request->estado ?? 1;
 
         $tarifa->sucursale_id = $request->sucursale_id;//nacional
         $tarifa->save();
