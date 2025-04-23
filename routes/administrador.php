@@ -35,5 +35,7 @@ Route::middleware(['auth:api_admin'])->group(function () {
     Route::get('/Atotal-nombre-d', 'DashboardAdminController@totalNombreD');
     Route::get('/Asucursales-con-contrato', 'DashboardAdminController@sucursalesConContrato');
     Route::get('/Asucursales-sin-contrato', 'DashboardAdminController@sucursalesSinContrato');
+    Route::get('/logs', 'LogController@getLogs')->name('logs.get');
+
 });
 
