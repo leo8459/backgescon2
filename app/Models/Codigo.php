@@ -21,6 +21,6 @@ class Codigo extends Model
     ];
     public function sucursale()
     {
-        return $this->belongsTo(Sucursale::class, 'sucursale_id');
+        return $this->belongsTo(Sucursale::class);
     }
 }

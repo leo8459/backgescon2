@@ -4,6 +4,8 @@
 use Illuminate\Support\Facades\Route;
 Route::post('/login', 'UserController@login');
 Route::middleware(['auth:api_admin'])->group(function () { 
+    Route::get('codigos/totales', 'CodigoController@totales');
+
     Route::apiResource('/users1', 'UserController')->parameters(['users1' => 'user']);
     Route::apiResource('/empresas1', 'EmpresaController')->parameters(['empresas1' => 'empresa']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/sucursales1', 'SucursaleController')->parameters(['sucursales1' => 'sucursale']);  //editar agragar eliminar listar apiresource
@@ -37,6 +39,7 @@ Route::middleware(['auth:api_admin'])->group(function () {
     Route::get('/Atotal-nombre-d', 'DashboardAdminController@totalNombreD');
     Route::get('/Asucursales-con-contrato', 'DashboardAdminController@sucursalesConContrato');
     Route::get('/Asucursales-sin-contrato', 'DashboardAdminController@sucursalesSinContrato');
+    Route::post('codigos/reimprimir', 'CodigoController@reimprimir');
 
 
     Route::get('/logs', 'LogController@getLogs')->name('logs.get');
