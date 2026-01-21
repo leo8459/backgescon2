@@ -42,29 +42,29 @@ class SolicitudeController extends Controller
         $solicitudes = Solicitude::with(['carteroRecogida', 'carteroEntrega', 'sucursale', 'tarifa', 'direccion', 'encargado', 'encargadoregional'])->get();
         return response()->json($solicitudes);
     }
-// ruta: GET /api/solicitudes/estado/{estado}
-public function solicitudesPorEstado($estado)
-{
-    $solicitudes = Solicitude::with([
-        'carteroRecogida',
-        'carteroEntrega',
-        'sucursale',
-        'tarifa',
-        'direccion',
-        'encargado',
-        'encargadoregional'
-    ])
-    ->where('estado', $estado)
-    ->get();
+    // ruta: GET /api/solicitudes/estado/{estado}
+    public function solicitudesPorEstado($estado)
+    {
+        $solicitudes = Solicitude::with([
+            'carteroRecogida',
+            'carteroEntrega',
+            'sucursale',
+            'tarifa',
+            'direccion',
+            'encargado',
+            'encargadoregional'
+        ])
+            ->where('estado', $estado)
+            ->get();
 
-    return response()->json($solicitudes);
-}
+        return response()->json($solicitudes);
+    }
 
 
 
     public function store(Request $request)
     {
-        
+
         // Extraer la imagen en base64 del request
         $imageData = $request->input('imagen'); // Base64 image data
 
@@ -263,21 +263,21 @@ public function solicitudesPorEstado($estado)
     {
         // Obtén la sucursal actualmente autenticada
         $sucursal = Auth::user();
-    
+
         if (!$sucursal) {
             return response()->json(['error' => 'Sucursal no autenticada.'], 401);
         }
-    
+
         // Convertimos el límite a numérico
         $limite = (float) $sucursal->limite;
-    
+
         // Obtenemos la suma total de 'nombre_d' de las solicitudes
         $totalSolicitudes = Solicitude::where('sucursale_id', $sucursal->id)
             ->sum(DB::raw('CAST(nombre_d AS NUMERIC)'));
-    
+
         // Calculamos el saldo restante
         $saldoRestante = $limite - $totalSolicitudes;
-    
+
         return response()->json([
             'sucursal' => $sucursal->nombre,
             'saldo_restante' => $saldoRestante,
@@ -285,8 +285,8 @@ public function solicitudesPorEstado($estado)
             'total_nombre_d' => $totalSolicitudes // Añadimos el total de nombre_d
         ]);
     }
-    
-    
+
+
 
     public function obtenerSaldoRestanteTodasSucursales()
     {
@@ -377,7 +377,7 @@ public function solicitudesPorEstado($estado)
         $solicitude->recojo_observacion = $request->recojo_observacion; // Asignar el cartero logueado
         $solicitude->save();
         Evento::create([
-            'accion' => 'Despachado',
+            'accion' => 'En camino',
             'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,  // Si no hay cartero_entrega_id, usa cartero_recogida_id
             'descripcion' => 'Envio en camino',
             'codigo' => $solicitude->guia,
@@ -396,7 +396,7 @@ public function solicitudesPorEstado($estado)
         $solicitude->nombre_d = $request->nombre_d; // Actualizar el peso
         $solicitude->save();
         Evento::create([
-            'accion' => 'Despachado',
+            'accion' => 'En camino',
             'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,  // Si no hay cartero_entrega_id, usa cartero_recogida_id
             'descripcion' => 'Envio en camino',
             'codigo' => $solicitude->guia,
@@ -406,18 +406,18 @@ public function solicitudesPorEstado($estado)
     }
     public function markAsVerified(Request $request, Solicitude $solicitude)
     {
-    
+
         try {
             $solicitude->estado = 4;
             $solicitude->save();
-    
+
             // Utilizar el encargado_id recibido en la solicitud
             $encargadoId = $request->input('encargado_id');
-    
+
             if (is_null($encargadoId)) {
                 return response()->json(['error' => 'No se recibió un encargado para esta solicitud.'], 400);
             }
-    
+
             Evento::create([
                 'accion' => 'Verificados',
                 'encargado_id' => $encargadoId,
@@ -425,9 +425,8 @@ public function solicitudesPorEstado($estado)
                 'codigo' => $solicitude->guia,
                 'fecha_hora' => now(),
             ]);
-    
+
             return response()->json(['message' => 'Solicitud marcada como verificada exitosamente.', 'solicitude' => $solicitude], 200);
-    
         } catch (\Exception $e) {
             [
                 'error' => $e->getMessage(),
@@ -439,9 +438,9 @@ public function solicitudesPorEstado($estado)
             ], 500);
         }
     }
-    
-    
-    
+
+
+
     public function marcarRecogido(Request $request, $id)
     {
         try {
@@ -532,16 +531,16 @@ public function solicitudesPorEstado($estado)
             $solicitude->encargado_id = $request->encargado_id;
             $solicitude->peso_v = $request->peso_v;
             $solicitude->nombre_d = $request->nombre_d;
-    
+
             // <-- Aquí guardas en la columna 'reencaminamiento' el departamento.
             if ($request->has('reencaminamiento')) {
                 $solicitude->reencaminamiento = $request->reencaminamiento;
             }
-    
+
             $solicitude->save();
-    
+
             Evento::create([
-                'accion' => 'Despachado',
+                'accion' => 'Transito',
                 'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,
                 'descripcion' => 'Despacho de envio a regional',
                 'codigo' => $solicitude->guia,
@@ -552,7 +551,7 @@ public function solicitudesPorEstado($estado)
             return response()->json(['error' => 'Error al marcar la solicitud como rechazada.', 'exception' => $e->getMessage()], 500);
         }
     }
-    
+
     public function EnCaminoRegional(Request $request, Solicitude $solicitude)
     {
         try {
@@ -560,14 +559,14 @@ public function solicitudesPorEstado($estado)
             $solicitude->cartero_entrega_id = $request->cartero_entrega_id; // Asignar el cartero de entrega
             $solicitude->save();
             Evento::create([
-                'accion' => 'EN ENTREGA',
+                'accion' => 'En camino',
                 'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,  // Si no hay cartero_entrega_id, usa cartero_recogida_id
                 'descripcion' => 'Envio en camino',
                 'codigo' => $solicitude->guia,
                 'fecha_hora' => now(),
             ]);
             return response()->json($solicitude);
-           
+
             return response()->json(['message' => 'Solicitud marcada como rechazada exitosamente.'], 200);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Error al marcar la solicitud como rechazada.', 'exception' => $e->getMessage()], 500);
@@ -582,7 +581,7 @@ public function solicitudesPorEstado($estado)
         $solicitude->nombre_d = $request->nombre_d; // Actualizar el nombre destinatario
         $solicitude->save();
         Evento::create([
-            'accion' => 'Recibir',
+            'accion' => 'Recibido en oficina',
             'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,  // Si no hay encargado_id, usa encargado_regional_id
             'descripcion' => 'Recibir envío en oficina de entrega',
             'codigo' => $solicitude->guia,
@@ -630,7 +629,7 @@ public function solicitudesPorEstado($estado)
             // Guardar los cambios en la base de datos
             $solicitude->save();
             Evento::create([
-                'accion' => 'Reencaminar',
+                'accion' => 'Reencaminado',
                 'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,  // Si no hay encargado_id, usa encargado_regional_id
                 'descripcion' => 'Despacho de envio a regional',
                 'codigo' => $solicitude->guia,
@@ -657,7 +656,7 @@ public function solicitudesPorEstado($estado)
             // Guardar cambios en la solicitud
             $solicitude->save();
             Evento::create([
-                'accion' => 'Recibir',
+                'accion' => 'Recibido origen',
                 'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,  // Si no hay encargado_id, usa encargado_regional_id
                 'descripcion' => 'Recibir envío reencaminado en oficinas',
                 'codigo' => $solicitude->guia,
@@ -677,23 +676,23 @@ public function solicitudesPorEstado($estado)
     public function getSolicitudesPorCategoriasHoy()
     {
         $today = date('Y-m-d');
-    
+
         // Solicitudes generadas hoy
         $solicitadasHoy = Solicitude::with(['sucursale', 'tarifa'])
             ->whereDate('created_at', $today)
             ->get();
-    
+
         // Solicitudes recogidas hoy
         $recogidasHoy = Solicitude::with(['sucursale', 'tarifa'])
             ->whereDate('fecha_recojo_c', $today)
             ->get();
-    
+
         // Solicitudes entregadas hoy
         $entregadasHoy = Solicitude::with(['sucursale', 'tarifa'])
             ->whereNotNull('cartero_entrega_id')
             ->whereDate('updated_at', $today)
             ->get();
-    
+
         // Retornar las solicitudes organizadas en categorías
         return response()->json([
             'solicitadas_hoy' => $solicitadasHoy,
@@ -701,7 +700,7 @@ public function solicitudesPorEstado($estado)
             'entregadas_hoy' => $entregadasHoy,
         ]);
     }
-    
+
 
 
     public function cargaMasiva(Request $request)
@@ -710,13 +709,13 @@ public function solicitudesPorEstado($estado)
             'file' => 'required|file|mimes:xlsx,xls,csv',
             'sucursale_id' => 'required|integer|exists:sucursales,id',
         ]);
-    
+
         $sucursale_id = $request->input('sucursale_id');
-    
+
         try {
             $import = new SolicitudesImport($sucursale_id);
             Excel::import($import, $request->file('file'));
-    
+
             // Retornar el número de registros creados y las guías generadas
             return response()->json([
                 'message' => 'Solicitudes importadas exitosamente',
@@ -733,49 +732,102 @@ public function solicitudesPorEstado($estado)
 
 
     public function descargarPlantilla()
-{
-    // Obtener la sucursal actualmente autenticada
-    $sucursal = Auth::user();
+    {
+        // Obtener la sucursal actualmente autenticada
+        $sucursal = Auth::user();
 
-    // Verificar si la sucursal está autenticada
-    if (!$sucursal) {
-        return response()->json(['error' => 'Sucursal no autenticada.'], 401);
+        // Verificar si la sucursal está autenticada
+        if (!$sucursal) {
+            return response()->json(['error' => 'Sucursal no autenticada.'], 401);
+        }
+
+        // Pasar el ID de la sucursal a la clase de exportación
+        return Excel::download(new PlantillaSolicitudesExport($sucursal->id), 'plantilla_solicitudes.xlsx');
     }
 
-    // Pasar el ID de la sucursal a la clase de exportación
-    return Excel::download(new PlantillaSolicitudesExport($sucursal->id), 'plantilla_solicitudes.xlsx');
-}
 
-    
-public function cambiarEstado(Request $request, $id)
+    public function cambiarEstado(Request $request, $id)
+    {
+        $request->validate([
+            'estado' => 'required|integer|min:1|max:15',
+        ]);
+
+        try {
+            $solicitude = Solicitude::findOrFail($id);
+            $solicitude->estado = $request->estado;
+            $solicitude->save();
+            // Evento::create([
+            //     'accion' => 'Actualizar Estado',
+            //     'descripcion' => "Estado cambiado a {$request->estado}",
+            //     'codigo' => $solicitude->guia,
+            //     'fecha_hora' => now(),
+            // ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Estado actualizado correctamente.'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cambiar el estado.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+  public function storeManual(Request $request)
 {
     $request->validate([
-        'estado' => 'required|integer|min:1|max:15',
+        'sucursale_id' => 'required|integer|exists:sucursales,id',
+        'tarifa_id'    => 'required|integer|exists:tarifas,id',
+        'guia'         => 'required|string|max:255',
+        'peso_v'       => 'nullable|string|max:255',
+        'observacion'  => 'nullable|string|max:255',
     ]);
 
-    try {
-        $solicitude = Solicitude::findOrFail($id);
-        $solicitude->estado = $request->estado;
-        $solicitude->save();
- // Evento::create([
-        //     'accion' => 'Actualizar Estado',
-        //     'descripcion' => "Estado cambiado a {$request->estado}",
-        //     'codigo' => $solicitude->guia,
-        //     'fecha_hora' => now(),
-        // ]);
-        return response()->json([
-            'success' => true,
-            'message' => 'Estado actualizado correctamente.'
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Error al cambiar el estado.',
-            'error' => $e->getMessage()
-        ], 500);
-    }
+    $solicitude = new Solicitude();
+    $solicitude->sucursale_id = $request->sucursale_id;
+    $solicitude->tarifa_id    = $request->tarifa_id;
+
+    // ✅ cartero_recogida_id = usuario logueado
+    $solicitude->cartero_recogida_id = Auth::id() ?? $request->cartero_recogida_id;
+
+    // =========================
+    // ✅ PESOS (MISMO VALOR)
+    // =========================
+    $solicitude->peso_v = $request->peso_v;
+    $solicitude->peso_o = $request->peso_v;   // ✅ MISMO PESO
+    // =========================
+
+    $solicitude->guia        = $request->guia;
+    $solicitude->observacion = $request->observacion;
+    $solicitude->estado      = 5;
+
+    // Defaults para campos NOT NULL
+    $solicitude->remitente   = 'N/D';
+    $solicitude->telefono    = '0';
+    $solicitude->contenido   = 'N/D';
+    $solicitude->destinatario = 'N/D';
+    $solicitude->telefono_d  = '0';
+    $solicitude->direccion_especifica_d = 'N/D';
+    $solicitude->zona_d      = 'N/D';
+
+    // Código de barras
+    $generator = new BarcodeGeneratorPNG();
+    $barcode = $generator->getBarcode($solicitude->guia, $generator::TYPE_CODE_128);
+    $solicitude->codigo_barras = base64_encode($barcode);
+
+    $solicitude->save();
+
+    Evento::create([
+        'accion' => 'Solicitud Manual',
+        'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,
+        'descripcion' => 'Registro manual de solicitud',
+        'codigo' => $solicitude->guia,
+        'fecha_hora' => now(),
+    ]);
+
+    return response()->json($solicitude, 201);
 }
 
-
-    
 }
