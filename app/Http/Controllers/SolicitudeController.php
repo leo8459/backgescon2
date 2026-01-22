@@ -238,88 +238,98 @@ class SolicitudeController extends Controller
         }
         return response()->json($tarifas);
     }
-    public function obtenerSaldoRestante($sucursale_id)
-    {
-        $sucursal = Sucursale::find($sucursale_id);
+   public function obtenerSaldoRestante($sucursale_id)
+{
+    $sucursal = Sucursale::find($sucursale_id);
 
-        if (!$sucursal) {
-            return response()->json(['error' => 'Sucursal no encontrada.'], 404);
-        }
+    if (!$sucursal) {
+        return response()->json(['error' => 'Sucursal no encontrada.'], 404);
+    }
 
+    $saldoRestante = DB::table('sucursales')
+        ->leftJoin('solicitudes', function ($join) {
+            $join->on('sucursales.id', '=', 'solicitudes.sucursale_id')
+                 ->whereIn('solicitudes.estado', [3, 4]); // ✅ SOLO estados 3 y 4
+        })
+        ->where('sucursales.id', $sucursale_id)
+        ->select(DB::raw("
+            sucursales.limite::numeric
+            - COALESCE(SUM(COALESCE(solicitudes.nombre_d,'0')::numeric), 0)
+            AS saldo_restante
+        "))
+        ->groupBy('sucursales.limite')
+        ->first();
+
+    return response()->json([
+        'sucursal' => $sucursal->nombre,
+        'saldo_restante' => $saldoRestante ? $saldoRestante->saldo_restante : $sucursal->limite,
+        'limite_total' => $sucursal->limite
+    ]);
+}
+
+   public function obtenerSaldoRestanteSucursalActual()
+{
+    $sucursal = Auth::user();
+
+    if (!$sucursal) {
+        return response()->json(['error' => 'Sucursal no autenticada.'], 401);
+    }
+
+    $limite = (float) $sucursal->limite;
+
+    // ✅ SOLO estados 3 y 4
+    $totalSolicitudes = Solicitude::where('sucursale_id', $sucursal->id)
+        ->whereIn('estado', [3, 4])
+        ->sum(DB::raw("CAST(COALESCE(nombre_d,'0') AS NUMERIC)"));
+
+    $saldoRestante = $limite - $totalSolicitudes;
+
+    return response()->json([
+        'sucursal' => $sucursal->nombre,
+        'saldo_restante' => $saldoRestante,
+        'limite_total' => $limite,
+        'total_nombre_d' => $totalSolicitudes
+    ]);
+}
+
+
+
+
+   public function obtenerSaldoRestanteTodasSucursales()
+{
+    $sucursales = Sucursale::all();
+    $resultados = [];
+
+    foreach ($sucursales as $sucursal) {
         $saldoRestante = DB::table('sucursales')
-            ->leftJoin('solicitudes', 'sucursales.id', '=', 'solicitudes.sucursale_id')
-            ->where('sucursales.id', $sucursale_id)
-            ->select(DB::raw('sucursales.limite::numeric - COALESCE(SUM(solicitudes.nombre_d::numeric), 0) AS saldo_restante'))
+            ->leftJoin('solicitudes', function ($join) {
+                $join->on('sucursales.id', '=', 'solicitudes.sucursale_id')
+                     ->whereIn('solicitudes.estado', [3, 4]); // ✅ SOLO 3 y 4
+            })
+            ->where('sucursales.id', $sucursal->id)
+            ->select(DB::raw("
+                sucursales.limite::numeric
+                - COALESCE(SUM(COALESCE(solicitudes.nombre_d,'0')::numeric), 0)
+                AS saldo_restante
+            "))
             ->groupBy('sucursales.limite')
             ->first();
 
-        return response()->json([
-            'sucursal' => $sucursal->nombre,
-            'saldo_restante' => $saldoRestante ? $saldoRestante->saldo_restante : $sucursal->limite,
-            'limite_total' => $sucursal->limite // Asegúrate de devolver el límite total
-        ]);
-    }
-    public function obtenerSaldoRestanteSucursalActual()
-    {
-        // Obtén la sucursal actualmente autenticada
-        $sucursal = Auth::user();
+        $diezPorCiento = $sucursal->limite * 0.1;
 
-        if (!$sucursal) {
-            return response()->json(['error' => 'Sucursal no autenticada.'], 401);
+        if (($saldoRestante->saldo_restante ?? $sucursal->limite) < $diezPorCiento) {
+            $resultados[] = [
+                'sucursal' => $sucursal->nombre,
+                'saldo_restante' => $saldoRestante ? $saldoRestante->saldo_restante : $sucursal->limite,
+                'limite_total' => $sucursal->limite,
+                'contacto_administrativo' => $sucursal->contacto_administrativo
+            ];
         }
-
-        // Convertimos el límite a numérico
-        $limite = (float) $sucursal->limite;
-
-        // Obtenemos la suma total de 'nombre_d' de las solicitudes
-        $totalSolicitudes = Solicitude::where('sucursale_id', $sucursal->id)
-            ->sum(DB::raw('CAST(nombre_d AS NUMERIC)'));
-
-        // Calculamos el saldo restante
-        $saldoRestante = $limite - $totalSolicitudes;
-
-        return response()->json([
-            'sucursal' => $sucursal->nombre,
-            'saldo_restante' => $saldoRestante,
-            'limite_total' => $limite,
-            'total_nombre_d' => $totalSolicitudes // Añadimos el total de nombre_d
-        ]);
     }
 
+    return response()->json($resultados);
+}
 
-
-    public function obtenerSaldoRestanteTodasSucursales()
-    {
-        // Obtener todas las sucursales
-        $sucursales = Sucursale::all();
-
-        // Crear una colección para almacenar los resultados
-        $resultados = [];
-
-        foreach ($sucursales as $sucursal) {
-            $saldoRestante = DB::table('sucursales')
-                ->leftJoin('solicitudes', 'sucursales.id', '=', 'solicitudes.sucursale_id')
-                ->where('sucursales.id', $sucursal->id)
-                ->select(DB::raw('sucursales.limite::numeric - COALESCE(SUM(solicitudes.nombre_d::numeric), 0) AS saldo_restante'))
-                ->groupBy('sucursales.limite')
-                ->first();
-
-            // Calcular el 10% del límite total
-            $diezPorCiento = $sucursal->limite * 0.1;
-
-            // Añadir la sucursal a los resultados solo si su saldo restante es menor al 10% del límite
-            if ($saldoRestante->saldo_restante < $diezPorCiento) {
-                $resultados[] = [
-                    'sucursal' => $sucursal->nombre,
-                    'saldo_restante' => $saldoRestante ? $saldoRestante->saldo_restante : $sucursal->limite,
-                    'limite_total' => $sucursal->limite,
-                    'contacto_administrativo' => $sucursal->contacto_administrativo // Añadir el contacto administrativo
-                ];
-            }
-        }
-
-        return response()->json($resultados);
-    }
     public function getDirecciones(Request $request)
     {
         $sucursaleId = $request->query('sucursale_id');
@@ -775,7 +785,7 @@ class SolicitudeController extends Controller
         }
     }
 
-  public function storeManual(Request $request)
+ public function storeManual(Request $request)
 {
     $request->validate([
         'sucursale_id' => 'required|integer|exists:sucursales,id',
@@ -792,12 +802,14 @@ class SolicitudeController extends Controller
     // ✅ cartero_recogida_id = usuario logueado
     $solicitude->cartero_recogida_id = Auth::id() ?? $request->cartero_recogida_id;
 
+    // ✅ FECHA DE RECOJO (AHORA)
+    $solicitude->fecha_recojo_c = now();
+
     // =========================
     // ✅ PESOS (MISMO VALOR)
     // =========================
     $solicitude->peso_v = $request->peso_v;
-    $solicitude->peso_o = $request->peso_v;   // ✅ MISMO PESO
-    // =========================
+    $solicitude->peso_o = $request->peso_v;
 
     $solicitude->guia        = $request->guia;
     $solicitude->observacion = $request->observacion;
@@ -829,5 +841,66 @@ class SolicitudeController extends Controller
 
     return response()->json($solicitude, 201);
 }
+
+public function storeEMS(Request $request)
+{
+    $request->validate([
+        'guia'        => 'required|string|max:255',
+        'peso_v'      => 'nullable|string|max:255',
+        'observacion' => 'nullable|string|max:255',
+    ]);
+
+    $solicitude = new Solicitude();
+
+    // ✅ NULL explícito
+    $solicitude->sucursale_id = null;
+    $solicitude->tarifa_id    = null;
+
+    // Cartero logueado
+    $solicitude->cartero_recogida_id = Auth::id() ?? $request->cartero_recogida_id;
+
+    // ✅ FECHA DE RECOJO (AHORA)
+    $solicitude->fecha_recojo_c = now();
+
+    // Datos EMS
+    $solicitude->tipo_correspondencia = 'EMS';
+    $solicitude->guia = $request->guia;
+
+    // ✅ PESOS IGUALES
+    $solicitude->peso_v = $request->peso_v;
+    $solicitude->peso_o = $request->peso_v;
+
+    $solicitude->observacion = $request->observacion;
+    $solicitude->estado = 5;
+
+    // Defaults NOT NULL
+    $solicitude->remitente   = 'N/D';
+    $solicitude->telefono    = '0';
+    $solicitude->contenido   = 'N/D';
+    $solicitude->destinatario = 'N/D';
+    $solicitude->telefono_d  = '0';
+    $solicitude->direccion_especifica_d = 'N/D';
+    $solicitude->zona_d      = 'N/D';
+
+    // Código de barras
+    $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
+    $barcode = $generator->getBarcode($solicitude->guia, $generator::TYPE_CODE_128);
+    $solicitude->codigo_barras = base64_encode($barcode);
+
+    $solicitude->save();
+
+    Evento::create([
+        'accion' => 'Envio EMS',
+        'cartero_id' => $solicitude->cartero_recogida_id,
+        'descripcion' => 'Registro EMS global',
+        'codigo' => $solicitude->guia,
+        'fecha_hora' => now(),
+    ]);
+
+    return response()->json($solicitude, 201);
+}
+
+
+
 
 }

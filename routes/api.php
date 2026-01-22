@@ -3,7 +3,17 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApiController;
-
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\CarteroController;
+use App\Http\Controllers\EmpresaController;
+use App\Http\Controllers\TarifaController;
+use App\Http\Controllers\EncargadoController;
+use App\Http\Controllers\EventoController;
+use App\Http\Controllers\SucursaleController;
+use App\Http\Controllers\DireccioneController;
+use App\Http\Controllers\SolicitudeController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DashboardCarteroController;
 
 /*
 |--------------------------------------------------------------------------

@@ -2,6 +2,17 @@
 
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\CarteroController;
+use App\Http\Controllers\EmpresaController;
+use App\Http\Controllers\TarifaController;
+use App\Http\Controllers\EncargadoController;
+use App\Http\Controllers\EventoController;
+use App\Http\Controllers\SucursaleController;
+use App\Http\Controllers\DireccioneController;
+use App\Http\Controllers\SolicitudeController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DashboardCarteroController;
 Route::post('/login', 'UserController@login'); // Login de Cartero
 
 Route::middleware(['auth:api_empresas'])->group(function () {
@@ -44,6 +55,16 @@ Route::middleware(['auth:api_empresas'])->group(function () {
     Route::get('/direcciones', 'SolicitudeController@getDirecciones');
 
 
+   // ✅ Para tu modal: sucursal simple (id, sigla, nombre)
+    Route::get('/sucursales-simple', function () {
+        return \App\Models\Sucursale::select('id', 'sigla', 'nombre')
+            ->where('estado', 1)
+            ->get();
+    });
+
+    // ✅ Registro manual
+    Route::post('/solicitudes/manual', [SolicitudeController::class, 'storeManual']);
+Route::post('solicitudes/ems', 'SolicitudeController@storeEMS');
 
 
     // TODOS LOS POST

@@ -56,6 +56,7 @@ return new class extends Migration
             $table->string('recojo_observacion')->nullable();
             $table->string('entrega_observacion')->nullable();
             $table->string('manifiesto')->nullable();
+            $table->string('tipo_correspondencia')->nullable();
 
 
             $table->timestamps();

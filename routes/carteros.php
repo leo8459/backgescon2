@@ -48,6 +48,7 @@ Route::middleware(['auth:api_cartero'])->group(function () {
     Route::get('/Ctodas-solicitudes', [DashboardController::class, 'todasSolicitudes']);
     Route::get('/Csolicitudes-hoy', [DashboardController::class, 'solicitudesHoy']);
     Route::get('/Csolicitudes-estado/{estado}', [DashboardController::class, 'solicitudesPorEstado']);
+    
 
     Route::get('/Csolicitudes-estado-1', [DashboardCarteroController::class, 'solicitudesEstado1']);
     Route::get('/Csolicitudes-estado-2', [DashboardCarteroController::class, 'solicitudesEstado2']);
@@ -71,4 +72,6 @@ Route::middleware(['auth:api_cartero'])->group(function () {
 
     // ✅ Registro manual
     Route::post('/solicitudes/manual', [SolicitudeController::class, 'storeManual']);
+Route::post('solicitudes/ems', 'SolicitudeController@storeEMS');
+
 });

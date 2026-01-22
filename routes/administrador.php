@@ -2,6 +2,17 @@
 
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\CarteroController;
+use App\Http\Controllers\EmpresaController;
+use App\Http\Controllers\TarifaController;
+use App\Http\Controllers\EncargadoController;
+use App\Http\Controllers\EventoController;
+use App\Http\Controllers\SucursaleController;
+use App\Http\Controllers\DireccioneController;
+use App\Http\Controllers\SolicitudeController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DashboardCarteroController;
 Route::post('/login', 'UserController@login');
 Route::middleware(['auth:api_admin'])->group(function () { 
     Route::get('codigos/totales', 'CodigoController@totales');
@@ -43,6 +54,16 @@ Route::middleware(['auth:api_admin'])->group(function () {
 
 
     Route::get('/logs', 'LogController@getLogs')->name('logs.get');
+   // ✅ Para tu modal: sucursal simple (id, sigla, nombre)
+    Route::get('/sucursales-simple', function () {
+        return \App\Models\Sucursale::select('id', 'sigla', 'nombre')
+            ->where('estado', 1)
+            ->get();
+    });
+
+    // ✅ Registro manual
+    Route::post('/solicitudes/manual', [SolicitudeController::class, 'storeManual']);
+Route::post('solicitudes/ems', 'SolicitudeController@storeEMS');
 
 });
 
