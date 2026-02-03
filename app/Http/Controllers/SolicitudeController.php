@@ -11,7 +11,7 @@ use App\Models\Direccione;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\DB;
-use App\Models\Evento; // Asegúrate de importar el modelo Evento
+use App\Models\Evento; // AsegÃºrate de importar el modelo Evento
 use Maatwebsite\Excel\Excel as ExcelFormat;
 use Illuminate\Support\Facades\Response;
 use App\Exports\PlantillaSolicitudesExport;
@@ -90,7 +90,7 @@ class SolicitudeController extends Controller
         $solicitude->tarifa_id = $request->tarifa_id ?? null;
         $solicitude->direccion_id = $request->direccion_id ?? null;
 
-        // Validar si el campo 'guia' tiene un valor, si no, generar la guía
+        // Validar si el campo 'guia' tiene un valor, si no, generar la guÃ­a
         $solicitude->guia = $request->guia ?: $this->generateGuia($request->sucursale_id, $request->tarifa_id)->getData()->guia;
 
         $solicitude->peso_o = $request->peso_o;
@@ -122,7 +122,7 @@ class SolicitudeController extends Controller
         $solicitude->imagen_devolucion = $request->imagen_devolucion;
         $solicitude->peso_r = $request->peso_r;
 
-        // Generar el código de barras para la guía
+        // Generar el cÃ³digo de barras para la guÃ­a
         $generator = new BarcodeGeneratorPNG();
         $barcode = $generator->getBarcode($solicitude->guia, $generator::TYPE_CODE_128);
         $solicitude->codigo_barras = base64_encode($barcode);
@@ -140,12 +140,12 @@ class SolicitudeController extends Controller
             'fecha_hora' => now(),
         ]);
 
-        // Cargar la relación de sucursale antes de devolver la respuesta
+        // Cargar la relaciÃ³n de sucursale antes de devolver la respuesta
         $solicitude->load('sucursale');
         $solicitude->load('direccion');
         $solicitude->load('tarifa');
 
-        // Devolver la respuesta con la solicitud guardada, incluyendo la relación cargada
+        // Devolver la respuesta con la solicitud guardada, incluyendo la relaciÃ³n cargada
         return $solicitude;
     }
 
@@ -249,7 +249,7 @@ class SolicitudeController extends Controller
     $saldoRestante = DB::table('sucursales')
         ->leftJoin('solicitudes', function ($join) {
             $join->on('sucursales.id', '=', 'solicitudes.sucursale_id')
-                 ->whereIn('solicitudes.estado', [3, 4]); // ✅ SOLO estados 3 y 4
+                 ->whereIn('solicitudes.estado', [3, 4]); // âœ… SOLO estados 3 y 4
         })
         ->where('sucursales.id', $sucursale_id)
         ->select(DB::raw("
@@ -277,7 +277,7 @@ class SolicitudeController extends Controller
 
     $limite = (float) $sucursal->limite;
 
-    // ✅ SOLO estados 3 y 4
+    // âœ… SOLO estados 3 y 4
     $totalSolicitudes = Solicitude::where('sucursale_id', $sucursal->id)
         ->whereIn('estado', [3, 4])
         ->sum(DB::raw("CAST(COALESCE(nombre_d,'0') AS NUMERIC)"));
@@ -304,7 +304,7 @@ class SolicitudeController extends Controller
         $saldoRestante = DB::table('sucursales')
             ->leftJoin('solicitudes', function ($join) {
                 $join->on('sucursales.id', '=', 'solicitudes.sucursale_id')
-                     ->whereIn('solicitudes.estado', [3, 4]); // ✅ SOLO 3 y 4
+                     ->whereIn('solicitudes.estado', [3, 4]); // âœ… SOLO 3 y 4
             })
             ->where('sucursales.id', $sucursal->id)
             ->select(DB::raw("
@@ -353,9 +353,19 @@ class SolicitudeController extends Controller
             return response()->json(['error' => 'Sucursal o tarifa no encontrados.'], 404);
         }
 
-        // Obtener el código de sucursal y tarifa
-        $sucursalCode = str_pad($sucursal->codigo_cliente, 2, '0', STR_PAD_LEFT);
-        $sucursalOrigin = str_pad($sucursal->origen, 2, '0', STR_PAD_LEFT); // Suponiendo que 'origen' es un número
+        // Primero va n_contrato
+        $sucursalCode = preg_replace('/\s+/', '', trim((string) $sucursal->n_contrato));
+        if ($sucursalCode === '') {
+            $sucursalCode = str_pad($sucursal->codigo_cliente, 2, '0', STR_PAD_LEFT);
+        }
+        $sucursalOrigin = str_pad($sucursal->origen, 2, '0', STR_PAD_LEFT);
+
+        // Número de sucursal tomado del nombre (ej: "GESTORA CBB 1" => "1")
+        $sucursalNumero = '0';
+        if (preg_match('/(\d+)\s*$/', trim((string) $sucursal->nombre), $matches)) {
+            $sucursalNumero = $matches[1];
+        }
+
         $tarifaCode = str_pad($tarifa->departamento, 2, '0', STR_PAD_LEFT);
 
         // Obtener el último número secuencial para esa sucursal
@@ -366,7 +376,6 @@ class SolicitudeController extends Controller
         // Extraer el número secuencial del último ID de guía, si existe
         $lastNumber = 0;
         if ($lastGuia) {
-            // Extraer los últimos 4 dígitos de la guía (asumiendo que estos representan el número secuencial)
             $lastNumber = intval(substr($lastGuia->guia, -4));
         }
 
@@ -374,7 +383,7 @@ class SolicitudeController extends Controller
         $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
 
         // Generar la nueva guía concatenando todo sin espacios ni separadores
-        $newGuia = "{$sucursalCode}{$sucursalOrigin}{$tarifaCode}{$newNumber}";
+        $newGuia = "{$sucursalCode}{$sucursalOrigin}{$sucursalNumero}{$tarifaCode}{$newNumber}";
 
         return response()->json(['guia' => $newGuia]);
     }
@@ -425,7 +434,7 @@ class SolicitudeController extends Controller
             $encargadoId = $request->input('encargado_id');
 
             if (is_null($encargadoId)) {
-                return response()->json(['error' => 'No se recibió un encargado para esta solicitud.'], 400);
+                return response()->json(['error' => 'No se recibiÃ³ un encargado para esta solicitud.'], 400);
             }
 
             Evento::create([
@@ -535,14 +544,14 @@ class SolicitudeController extends Controller
     public function MandarRegional(Request $request, Solicitude $solicitude)
     {
         try {
-            // Lo demás que ya tenías...
+            // Lo demÃ¡s que ya tenÃ­as...
             $solicitude->estado = 8;
             $solicitude->fecha_envio_regional = $request->fecha_envio_regional ?? now();
             $solicitude->encargado_id = $request->encargado_id;
             $solicitude->peso_v = $request->peso_v;
             $solicitude->nombre_d = $request->nombre_d;
 
-            // <-- Aquí guardas en la columna 'reencaminamiento' el departamento.
+            // <-- AquÃ­ guardas en la columna 'reencaminamiento' el departamento.
             if ($request->has('reencaminamiento')) {
                 $solicitude->reencaminamiento = $request->reencaminamiento;
             }
@@ -593,7 +602,7 @@ class SolicitudeController extends Controller
         Evento::create([
             'accion' => 'Recibido en oficina',
             'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,  // Si no hay encargado_id, usa encargado_regional_id
-            'descripcion' => 'Recibir envío en oficina de entrega',
+            'descripcion' => 'Recibir envÃ­o en oficina de entrega',
             'codigo' => $solicitude->guia,
             'fecha_hora' => now(),
         ]);
@@ -603,7 +612,7 @@ class SolicitudeController extends Controller
     public function Rechazado(Request $request, Solicitude $solicitude)
     {
         try {
-            // Optimizar la imagen utilizando el método optimizeImage
+            // Optimizar la imagen utilizando el mÃ©todo optimizeImage
 
             // Asignar los valores al modelo
             $solicitude->estado = 11;
@@ -668,7 +677,7 @@ class SolicitudeController extends Controller
             Evento::create([
                 'accion' => 'Recibido origen',
                 'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,  // Si no hay encargado_id, usa encargado_regional_id
-                'descripcion' => 'Recibir envío reencaminado en oficinas',
+                'descripcion' => 'Recibir envÃ­o reencaminado en oficinas',
                 'codigo' => $solicitude->guia,
                 'fecha_hora' => now(),
             ]);
@@ -703,7 +712,7 @@ class SolicitudeController extends Controller
             ->whereDate('updated_at', $today)
             ->get();
 
-        // Retornar las solicitudes organizadas en categorías
+        // Retornar las solicitudes organizadas en categorÃ­as
         return response()->json([
             'solicitadas_hoy' => $solicitadasHoy,
             'recogidas_hoy' => $recogidasHoy,
@@ -726,7 +735,7 @@ class SolicitudeController extends Controller
             $import = new SolicitudesImport($sucursale_id);
             Excel::import($import, $request->file('file'));
 
-            // Retornar el número de registros creados y las guías generadas
+            // Retornar el nÃºmero de registros creados y las guÃ­as generadas
             return response()->json([
                 'message' => 'Solicitudes importadas exitosamente',
                 'creados' => $import->getCreadoCount(),
@@ -746,12 +755,12 @@ class SolicitudeController extends Controller
         // Obtener la sucursal actualmente autenticada
         $sucursal = Auth::user();
 
-        // Verificar si la sucursal está autenticada
+        // Verificar si la sucursal estÃ¡ autenticada
         if (!$sucursal) {
             return response()->json(['error' => 'Sucursal no autenticada.'], 401);
         }
 
-        // Pasar el ID de la sucursal a la clase de exportación
+        // Pasar el ID de la sucursal a la clase de exportaciÃ³n
         return Excel::download(new PlantillaSolicitudesExport($sucursal->id), 'plantilla_solicitudes.xlsx');
     }
 
@@ -799,14 +808,14 @@ class SolicitudeController extends Controller
     $solicitude->sucursale_id = $request->sucursale_id;
     $solicitude->tarifa_id    = $request->tarifa_id;
 
-    // ✅ cartero_recogida_id = usuario logueado
+    // âœ… cartero_recogida_id = usuario logueado
     $solicitude->cartero_recogida_id = Auth::id() ?? $request->cartero_recogida_id;
 
-    // ✅ FECHA DE RECOJO (AHORA)
+    // âœ… FECHA DE RECOJO (AHORA)
     $solicitude->fecha_recojo_c = now();
 
     // =========================
-    // ✅ PESOS (MISMO VALOR)
+    // âœ… PESOS (MISMO VALOR)
     // =========================
     $solicitude->peso_v = $request->peso_v;
     $solicitude->peso_o = $request->peso_v;
@@ -824,7 +833,7 @@ class SolicitudeController extends Controller
     $solicitude->direccion_especifica_d = 'N/D';
     $solicitude->zona_d      = 'N/D';
 
-    // Código de barras
+    // CÃ³digo de barras
     $generator = new BarcodeGeneratorPNG();
     $barcode = $generator->getBarcode($solicitude->guia, $generator::TYPE_CODE_128);
     $solicitude->codigo_barras = base64_encode($barcode);
@@ -852,21 +861,21 @@ public function storeEMS(Request $request)
 
     $solicitude = new Solicitude();
 
-    // ✅ NULL explícito
+    // âœ… NULL explÃ­cito
     $solicitude->sucursale_id = null;
     $solicitude->tarifa_id    = null;
 
     // Cartero logueado
     $solicitude->cartero_recogida_id = Auth::id() ?? $request->cartero_recogida_id;
 
-    // ✅ FECHA DE RECOJO (AHORA)
+    // âœ… FECHA DE RECOJO (AHORA)
     $solicitude->fecha_recojo_c = now();
 
     // Datos EMS
     $solicitude->tipo_correspondencia = 'EMS';
     $solicitude->guia = $request->guia;
 
-    // ✅ PESOS IGUALES
+    // âœ… PESOS IGUALES
     $solicitude->peso_v = $request->peso_v;
     $solicitude->peso_o = $request->peso_v;
 
@@ -882,7 +891,7 @@ public function storeEMS(Request $request)
     $solicitude->direccion_especifica_d = 'N/D';
     $solicitude->zona_d      = 'N/D';
 
-    // Código de barras
+    // CÃ³digo de barras
     $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
     $barcode = $generator->getBarcode($solicitude->guia, $generator::TYPE_CODE_128);
     $solicitude->codigo_barras = base64_encode($barcode);
@@ -904,3 +913,4 @@ public function storeEMS(Request $request)
 
 
 }
+

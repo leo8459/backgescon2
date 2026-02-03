@@ -36,41 +36,41 @@ class SolicitudesImport implements ToCollection
                                 ->first();
     
                 if (!$tarifa) {
-                    // Continuar si no se encuentra una tarifa válida
+                    // Continuar si no se encuentra una tarifa vÃ¡lida
                     continue;
                 }
     
-                // Buscar dirección usando nombre de dirección, filtrado por sucursal
-                $direccion = Direccione::where('nombre', $row[2]) // Nombre de dirección en la columna 2
+                // Buscar direcciÃ³n usando nombre de direcciÃ³n, filtrado por sucursal
+                $direccion = Direccione::where('nombre', $row[2]) // Nombre de direcciÃ³n en la columna 2
                                         ->where('sucursale_id', $this->sucursale_id)
                                         ->first();
     
                 if (!$direccion) {
-                    // Continuar si no se encuentra una dirección válida
+                    // Continuar si no se encuentra una direcciÃ³n vÃ¡lida
                     continue;
                 }
     
-                // Crear una nueva instancia de Solicitude con los IDs de tarifa y dirección
+                // Crear una nueva instancia de Solicitude con los IDs de tarifa y direcciÃ³n
                 $solicitude = new Solicitude();
                 $solicitude->sucursale_id = $this->sucursale_id;
                 $solicitude->tarifa_id = $tarifa->id; // Usar ID de tarifa encontrado
-                $solicitude->direccion_id = $direccion->id; // Usar ID de dirección encontrado
+                $solicitude->direccion_id = $direccion->id; // Usar ID de direcciÃ³n encontrado
                 $solicitude->peso_o = $row[3]; // Peso en la columna 3
                 $solicitude->remitente = $row[4]; // Remitente en la columna 4
-                $solicitude->telefono = $row[5]; // Teléfono en la columna 5
+                $solicitude->telefono = $row[5]; // TelÃ©fono en la columna 5
                 $solicitude->contenido = $row[6]; // Contenido en la columna 6
                 $solicitude->destinatario = $row[7]; // Destinatario en la columna 7
-                $solicitude->telefono_d = $row[8]; // Teléfono destinatario en la columna 8
+                $solicitude->telefono_d = $row[8]; // TelÃ©fono destinatario en la columna 8
                 // No se asigna direccion_d para que quede en blanco
-                $solicitude->direccion_especifica_d = $row[9]; // Dirección específica en la columna 10
+                $solicitude->direccion_especifica_d = $row[9]; // DirecciÃ³n especÃ­fica en la columna 10
                 $solicitude->zona_d = $row[10]; // Zona en la columna 11
                 $solicitude->ciudad = $row[11]; // Ciudad en la columna 12
                 $solicitude->fecha = now();
     
-                // Generar la guía
+                // Generar la guÃ­a
                 $solicitude->guia = $this->generateGuia($solicitude->sucursale_id, $solicitude->tarifa_id);
     
-                // Generar el código de barras
+                // Generar el cÃ³digo de barras
                 $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
                 $barcode = $generator->getBarcode($solicitude->guia, $generator::TYPE_CODE_128);
                 $solicitude->codigo_barras = base64_encode($barcode);
@@ -98,7 +98,7 @@ class SolicitudesImport implements ToCollection
     {
         return $this->guias;
     }
-    public function getCreadoCount() // Implementar el método
+    public function getCreadoCount() // Implementar el mÃ©todo
     {
         return $this->creadoCount;
         $solicitude->save();
@@ -113,8 +113,19 @@ class SolicitudesImport implements ToCollection
             throw new \Exception('Sucursal o tarifa no encontrada.');
         }
 
-        $sucursalCode = str_pad($sucursal->codigo_cliente, 2, '0', STR_PAD_LEFT);
+        // Primero va n_contrato
+        $sucursalCode = preg_replace('/\s+/', '', trim((string) $sucursal->n_contrato));
+        if ($sucursalCode === '') {
+            $sucursalCode = str_pad($sucursal->codigo_cliente, 2, '0', STR_PAD_LEFT);
+        }
         $sucursalOrigin = str_pad($sucursal->origen, 2, '0', STR_PAD_LEFT);
+
+        // Número de sucursal tomado del nombre (ej: "GESTORA CBB 1" => "1")
+        $sucursalNumero = '0';
+        if (preg_match('/(\d+)\s*$/', trim((string) $sucursal->nombre), $matches)) {
+            $sucursalNumero = $matches[1];
+        }
+
         $tarifaCode = str_pad($tarifa->departamento, 2, '0', STR_PAD_LEFT);
 
         $lastGuia = Solicitude::where('sucursale_id', $sucursaleId)
@@ -128,6 +139,7 @@ class SolicitudesImport implements ToCollection
 
         $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
 
-        return "{$sucursalCode}{$sucursalOrigin}{$tarifaCode}{$newNumber}";
+        return "{$sucursalCode}{$sucursalOrigin}{$sucursalNumero}{$tarifaCode}{$newNumber}";
     }
 }
+
