@@ -796,17 +796,20 @@ class SolicitudeController extends Controller
 
  public function storeManual(Request $request)
 {
-    $request->validate([
-        'sucursale_id' => 'required|integer|exists:sucursales,id',
-        'tarifa_id'    => 'required|integer|exists:tarifas,id',
-        'guia'         => 'required|string|max:255',
-        'peso_v'       => 'nullable|string|max:255',
-        'observacion'  => 'nullable|string|max:255',
-    ]);
+$request->validate([
+    'sucursale_id'     => 'required|integer|exists:sucursales,id',
+    'guia'             => 'required|string|max:255',
+    'ciudad'           => 'nullable|string|max:255',
+    'peso_v'           => 'nullable|string|max:255',
+    'observacion'      => 'nullable|string|max:255',
+    'reencaminamiento' => 'nullable|string|max:255', // ✅ NUEVO
+]);
+
 
     $solicitude = new Solicitude();
     $solicitude->sucursale_id = $request->sucursale_id;
-    $solicitude->tarifa_id    = $request->tarifa_id;
+$solicitude->tarifa_id = null; // ✅ SIEMPRE NULL
+$solicitude->reencaminamiento = $request->reencaminamiento; // ✅ NUEVO
 
     // âœ… cartero_recogida_id = usuario logueado
     $solicitude->cartero_recogida_id = Auth::id() ?? $request->cartero_recogida_id;
@@ -821,6 +824,7 @@ class SolicitudeController extends Controller
     $solicitude->peso_o = $request->peso_v;
 
     $solicitude->guia        = $request->guia;
+    $solicitude->ciudad      = $request->provincia ?? $request->ciudad;
     $solicitude->observacion = $request->observacion;
     $solicitude->estado      = 5;
 
@@ -856,6 +860,7 @@ public function storeEMS(Request $request)
     $request->validate([
         'guia'        => 'required|string|max:255',
         'peso_v'      => 'nullable|string|max:255',
+        'provincia'   => 'nullable|string|max:255',
         'observacion' => 'nullable|string|max:255',
     ]);
 
@@ -874,6 +879,7 @@ public function storeEMS(Request $request)
     // Datos EMS
     $solicitude->tipo_correspondencia = 'EMS';
     $solicitude->guia = $request->guia;
+    $solicitude->ciudad = $request->provincia ?? $request->ciudad;
 
     // âœ… PESOS IGUALES
     $solicitude->peso_v = $request->peso_v;
