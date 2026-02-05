@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\cartero;
+use App\Models\Cartero;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 use Illuminate\Notifications\Notifiable;
