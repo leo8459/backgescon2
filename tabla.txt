@@ -1,4 +1,4 @@
-php artisan migrate --path=/database/migrations/2024_09_05_120346_create_eventos_table.php
+php artisan migrate --path=/database/migrations/2026_02_10_000001_create_transporte_table.php
 2024_06_07_135921_create_solicitudes_table
 
 

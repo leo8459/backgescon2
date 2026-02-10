@@ -8,6 +8,7 @@ use App\Models\Sucursale;
 use App\Models\Encargado;
 use App\Models\Tarifa;
 use App\Models\Direccione;
+use App\Models\Transporte;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\DB;
@@ -39,7 +40,7 @@ class SolicitudeController extends Controller
     }
     public function index()
     {
-        $solicitudes = Solicitude::with(['carteroRecogida', 'carteroEntrega', 'sucursale', 'tarifa', 'direccion', 'encargado', 'encargadoregional'])->get();
+        $solicitudes = Solicitude::with(['carteroRecogida', 'carteroEntrega', 'sucursale', 'tarifa', 'direccion', 'encargado', 'encargadoregional', 'transporte'])->get();
         return response()->json($solicitudes);
     }
     // ruta: GET /api/solicitudes/estado/{estado}
@@ -52,7 +53,8 @@ class SolicitudeController extends Controller
             'tarifa',
             'direccion',
             'encargado',
-            'encargadoregional'
+            'encargadoregional',
+            'transporte',
         ])
             ->where('estado', $estado)
             ->get();
@@ -862,6 +864,7 @@ public function storeEMS(Request $request)
         'peso_v'      => 'nullable|string|max:255',
         'provincia'   => 'nullable|string|max:255',
         'observacion' => 'nullable|string|max:255',
+        'reencaminamiento' => 'nullable|string|max:255',
     ]);
 
     $solicitude = new Solicitude();
@@ -886,6 +889,7 @@ public function storeEMS(Request $request)
     $solicitude->peso_o = $request->peso_v;
 
     $solicitude->observacion = $request->observacion;
+    $solicitude->reencaminamiento = $request->reencaminamiento;
     $solicitude->estado = 5;
 
     // Defaults NOT NULL
@@ -915,6 +919,119 @@ public function storeEMS(Request $request)
     return response()->json($solicitude, 201);
 }
 
+public function registrarTransporte(Request $request)
+{
+    $data = $request->validate([
+        'transportadora' => 'required|string|max:255',
+        'provincia' => 'required|string|max:255',
+        'cartero_id' => 'required|integer|exists:carteros,id',
+        'n_recibo' => 'nullable|string|max:255',
+        'n_factura' => 'nullable|string|max:255',
+        'precio_total' => 'nullable|numeric|min:0',
+        'peso_total' => 'nullable|numeric|min:0',
+        'solicitude_ids' => 'required_without:solicitudes|array|min:1',
+        'solicitude_ids.*' => 'integer|exists:solicitudes,id',
+        'solicitudes' => 'nullable|array|min:1',
+        'solicitudes.*.id' => 'required_with:solicitudes|integer|exists:solicitudes,id',
+        'solicitudes.*.guia' => 'nullable|string|max:255',
+    ]);
+
+    try {
+        $idsDesdeArray = collect($data['solicitude_ids'] ?? []);
+        $idsDesdeObjetos = collect($data['solicitudes'] ?? [])->pluck('id');
+        $solicitudeIds = $idsDesdeArray->merge($idsDesdeObjetos)->unique()->values()->all();
+
+        $solicitudes = Solicitude::whereIn('id', $solicitudeIds)->get()->keyBy('id');
+        if ($solicitudes->count() !== count($solicitudeIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Una o mas solicitudes no existen.'
+            ], 422);
+        }
+
+        if (!empty($data['solicitudes'])) {
+            foreach ($data['solicitudes'] as $item) {
+                if (!empty($item['guia'])) {
+                    $solicitude = $solicitudes->get($item['id']);
+                    if (!$solicitude || $solicitude->guia !== $item['guia']) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'La guia no coincide con la solicitud seleccionada.',
+                            'solicitude_id' => $item['id'],
+                            'guia_enviada' => $item['guia'],
+                            'guia_actual' => $solicitude->guia ?? null,
+                        ], 422);
+                    }
+                }
+            }
+        }
+
+        $transporte = DB::transaction(function () use ($data, $solicitudes, $solicitudeIds) {
+            $pesoTotalCalculado = $solicitudes->sum(function ($solicitude) {
+                $peso = $solicitude->peso_r ?? $solicitude->peso_v ?? $solicitude->peso_o ?? 0;
+                return (float) str_replace(',', '.', (string) $peso);
+            });
+
+            $transporte = Transporte::create([
+                'transportadora' => $data['transportadora'],
+                'provincia' => $data['provincia'],
+                'cartero_id' => $data['cartero_id'],
+                'n_recibo' => $data['n_recibo'] ?? null,
+                'n_factura' => $data['n_factura'] ?? null,
+                'precio_total' => $data['precio_total'] ?? 0,
+                'peso_total' => $data['peso_total'] ?? $pesoTotalCalculado,
+                'guias' => $solicitudes->pluck('guia')->values()->all(),
+            ]);
+
+            Solicitude::whereIn('id', $solicitudeIds)->update([
+                'transporte_id' => $transporte->id,
+                'estado' => 14,
+            ]);
+
+            foreach ($solicitudes as $solicitude) {
+                Evento::create([
+                    'accion' => 'Envio Provincia',
+                    'cartero_id' => $solicitude->cartero_recogida_id,
+                    'descripcion' => 'Envio mandado a provincia',
+                    'codigo' => $solicitude->guia,
+                    'fecha_hora' => now(),
+                ]);
+            }
+
+            return $transporte;
+        });
+
+        $transporte->load(['cartero', 'solicitudes']);
+        $solicitudesSeleccionadas = Solicitude::whereIn('id', $solicitudeIds)
+            ->select('id', 'guia', 'estado', 'transporte_id')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Transporte registrado y solicitudes actualizadas a estado 14.',
+            'transporte' => $transporte,
+            'solicitudes' => $solicitudesSeleccionadas,
+        ], 201);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No se pudo registrar el transporte.',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+public function listarTransportes()
+{
+    $transportes = Transporte::with(['cartero', 'solicitudes'])->latest('id')->get();
+    return response()->json($transportes);
+}
+
+public function mostrarTransporte($id)
+{
+    $transporte = Transporte::with(['cartero', 'solicitudes'])->findOrFail($id);
+    return response()->json($transporte);
+}
 
 
 

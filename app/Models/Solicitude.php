@@ -38,4 +38,9 @@ class Solicitude extends Model
     {
         return $this->belongsTo(Encargado::class, 'encargado_regional_id');
     }
+
+    public function transporte()
+    {
+        return $this->belongsTo(Transporte::class, 'transporte_id');
+    }
 }

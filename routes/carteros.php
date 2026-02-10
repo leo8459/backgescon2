@@ -74,4 +74,9 @@ Route::middleware(['auth:api_cartero'])->group(function () {
     Route::post('/solicitudes/manual', [SolicitudeController::class, 'storeManual']);
 Route::post('solicitudes/ems', 'SolicitudeController@storeEMS');
 
+    // Transporte
+    Route::post('/transportes', [SolicitudeController::class, 'registrarTransporte']);
+    Route::get('/transportes', [SolicitudeController::class, 'listarTransportes']);
+    Route::get('/transportes/{id}', [SolicitudeController::class, 'mostrarTransporte']);
+
 });
