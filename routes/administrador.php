@@ -28,6 +28,7 @@ Route::middleware(['auth:api_admin'])->group(function () {
     Route::apiResource('/contrato1', 'ContratosController')->parameters(['contrato1' => 'contrato']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/direcciones1', 'DireccioneController')->parameters(['direcciones1' => 'direccione']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/codigos', 'CodigoController');  //editar agragar eliminar listar apiresource
+    Route::apiResource('/eventos1', EventoController::class);
 
     Route::put('/solicitudesrecojo/{solicitude}/', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega/{solicitude}/', 'SolicitudeController@markAsEntregado');
@@ -64,6 +65,9 @@ Route::middleware(['auth:api_admin'])->group(function () {
     // ✅ Registro manual
     Route::post('/solicitudes/manual', [SolicitudeController::class, 'storeManual']);
 Route::post('solicitudes/ems', 'SolicitudeController@storeEMS');
-
+    // Transporte
+    Route::post('/transportes1', [SolicitudeController::class, 'registrarTransporte']);
+    Route::get('/transportes1', [SolicitudeController::class, 'listarTransportes']);
+    Route::get('/transportes1/{id}', [SolicitudeController::class, 'mostrarTransporte']);
 });
 
