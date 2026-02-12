@@ -989,10 +989,14 @@ public function registrarTransporte(Request $request)
             ]);
 
             foreach ($solicitudes as $solicitude) {
+                $carteroId = $solicitude->cartero_recogida_id;
+                $encargadoId = $carteroId ? null : $solicitude->encargado_id;
+
                 Evento::create([
-                    'accion' => 'Envio Provincia',
-                    'cartero_id' => $solicitude->cartero_recogida_id,
-                    'descripcion' => 'Envio mandado a provincia',
+                    'accion' => 'TRANSPORTE',
+                    'cartero_id' => $carteroId,
+                    'encargado_id' => $encargadoId,
+                    'descripcion' => 'Envio en transporte externo',
                     'codigo' => $solicitude->guia,
                     'fecha_hora' => now(),
                 ]);
