@@ -93,7 +93,23 @@ class SolicitudeController extends Controller
         $solicitude->direccion_id = $request->direccion_id ?? null;
 
         // Validar si el campo 'guia' tiene un valor, si no, generar la guÃ­a
-        $solicitude->guia = $request->guia ?: $this->generateGuia($request->sucursale_id, $request->tarifa_id)->getData()->guia;
+        $guia = $request->guia;
+        if (empty($guia)) {
+            $guiaResponse = $this->generateGuia(
+                $request->sucursale_id,
+                $request->tarifa_id,
+                $request->reencaminamiento
+            );
+            $guiaData = method_exists($guiaResponse, 'getData') ? $guiaResponse->getData(true) : [];
+            $guia = $guiaData['guia'] ?? null;
+
+            if (empty($guia)) {
+                return response()->json([
+                    'error' => $guiaData['error'] ?? 'No se pudo generar la guia. Verifica sucursale_id.',
+                ], 422);
+            }
+        }
+        $solicitude->guia = $guia;
 
         $solicitude->peso_o = $request->peso_o;
         $solicitude->peso_v = $request->peso_v;
@@ -129,6 +145,7 @@ class SolicitudeController extends Controller
         $barcode = $generator->getBarcode($solicitude->guia, $generator::TYPE_CODE_128);
         $solicitude->codigo_barras = base64_encode($barcode);
         $solicitude->fecha_envio_regional = $request->fecha_envio_regional;
+        $solicitude->reencaminamiento = $request->reencaminamiento;
 
         // Guardar la solicitud en la base de datos
         $solicitude->save();
@@ -344,53 +361,52 @@ class SolicitudeController extends Controller
         }
         return response()->json($direcciones);
     }
-    public function generateGuia($sucursaleId, $tarifaId)
+    public function generateGuia($sucursaleId, $tarifaId = null, $reencaminamiento = null)
     {
-        // Recuperar la sucursale y tarifa
+        // Recuperar la sucursal y tarifa (tarifa opcional)
         $sucursal = Sucursale::find($sucursaleId);
-        $tarifa = Tarifa::find($tarifaId);
+        $tarifa = $tarifaId ? Tarifa::find($tarifaId) : null;
 
-        // Validar si ambos datos existen
-        if (!$sucursal || !$tarifa) {
-            return response()->json(['error' => 'Sucursal o tarifa no encontrados.'], 404);
+        if (!$sucursal) {
+            return response()->json(['error' => 'Sucursal no encontrada.'], 404);
         }
 
-        // Primero va n_contrato
         $sucursalCode = preg_replace('/\s+/', '', trim((string) $sucursal->n_contrato));
         if ($sucursalCode === '') {
-            $sucursalCode = str_pad($sucursal->codigo_cliente, 2, '0', STR_PAD_LEFT);
+            $sucursalCode = str_pad((string) $sucursal->codigo_cliente, 4, '0', STR_PAD_LEFT);
         }
-        $sucursalOrigin = str_pad($sucursal->origen, 2, '0', STR_PAD_LEFT);
+        $sucursalOrigin = strtoupper(trim((string) $sucursal->origen));
 
-        // Número de sucursal tomado del nombre (ej: "GESTORA CBB 1" => "1")
-        $sucursalNumero = '0';
-        if (preg_match('/(\d+)\s*$/', trim((string) $sucursal->nombre), $matches)) {
-            $sucursalNumero = $matches[1];
+        // Prioridad: tarifa->departamento, luego reencaminamiento, luego "000"
+        if ($tarifa) {
+            $destino = strtoupper(preg_replace('/\s+/', '', trim((string) $tarifa->departamento)));
+        } else {
+            $destino = strtoupper(preg_replace('/\s+/', '', trim((string) $reencaminamiento)));
         }
 
-        $tarifaCode = str_pad($tarifa->departamento, 2, '0', STR_PAD_LEFT);
+        if ($destino === '') {
+            $tarifaCode = '000';
+        } elseif (ctype_digit($destino)) {
+            $tarifaCode = str_pad($destino, 3, '0', STR_PAD_LEFT);
+        } else {
+            $tarifaCode = str_pad(substr($destino, 0, 3), 3, '0', STR_PAD_RIGHT);
+        }
 
-        // Obtener el último número secuencial para esa sucursal
+        // Secuencial por sucursal con 5 digitos al final
         $lastGuia = Solicitude::where('sucursale_id', $sucursaleId)
             ->latest('id')
             ->first();
 
-        // Extraer el número secuencial del último ID de guía, si existe
         $lastNumber = 0;
-        if ($lastGuia) {
-            $lastNumber = intval(substr($lastGuia->guia, -4));
+        if ($lastGuia && preg_match('/(\d+)$/', (string) $lastGuia->guia, $matches)) {
+            $lastNumber = (int) $matches[1];
         }
 
-        // Incrementar el número para la nueva guía
-        $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-
-        // Generar la nueva guía concatenando todo sin espacios ni separadores
-        $newGuia = "{$sucursalCode}{$sucursalOrigin}{$sucursalNumero}{$tarifaCode}{$newNumber}";
+        $newNumber = str_pad((string) ($lastNumber + 1), 5, '0', STR_PAD_LEFT);
+        $newGuia = "{$sucursalCode}{$sucursalOrigin}{$tarifaCode}{$newNumber}";
 
         return response()->json(['guia' => $newGuia]);
     }
-
-
     public function markAsEnCamino(Request $request, Solicitude $solicitude)
     {
         $solicitude->estado = 2; // Cambiar estado a "En camino"
