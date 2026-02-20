@@ -26,6 +26,42 @@ use Illuminate\Support\Facades\Log;
 
 class ApiController extends Controller
 {
+protected function logImagenRequest(Request $request, string $context, ?string $guia = null): void
+{
+    $img = $request->input('imagen');
+    Log::info("{$context} payload imagen", [
+        'guia' => $guia ?? $request->input('guia'),
+        'has_imagen_key' => $request->has('imagen'),
+        'imagen_is_string' => is_string($img),
+        'imagen_length' => is_string($img) ? strlen($img) : null,
+        'imagen_prefix' => is_string($img) ? substr($img, 0, 60) : null,
+        'content_type' => $request->header('Content-Type'),
+        'ip' => $request->ip(),
+    ]);
+}
+
+protected function optimizeImage($imageData)
+{
+    if (empty($imageData) || !is_string($imageData)) {
+        return null;
+    }
+
+    try {
+        return (string) Image::make(trim($imageData))
+            ->resize(300, null, function ($constraint) {
+                $constraint->aspectRatio();
+            })
+            ->encode('webp', 50)
+            ->encode('data-url');
+    } catch (\Throwable $e) {
+        Log::error('Error optimizando imagen en ApiController', [
+            'message' => $e->getMessage(),
+        ]);
+        // Fallback: guardar original para no perder la imagen.
+        return trim($imageData);
+    }
+}
+
 // ruta: GET /api/solicitudes/estado/{estado}
 public function solicitudesPorEstado($estado)
 {
@@ -225,6 +261,7 @@ public function cambiarEstadoPorGuia(Request $request)
 public function actualizarEstadoConFirma(Request $request)
 {
     try {
+        $this->logImagenRequest($request, 'ApiController@actualizarEstadoConFirma');
         // Validar los datos del request
         $request->validate([
             'guia'                => 'required|string|max:255',
@@ -257,7 +294,12 @@ public function actualizarEstadoConFirma(Request $request)
         $solicitud->estado              = $request->estado;
         $solicitud->firma_d             = $request->firma_d;
         $solicitud->entrega_observacion = $request->entrega_observacion;
-        $solicitud->imagen              = $request->imagen;
+        if ($request->has('imagen')) {
+            $incomingImage = $request->input('imagen');
+            $solicitud->imagen = !empty($incomingImage)
+                ? ($this->optimizeImage($incomingImage) ?? $solicitud->imagen)
+                : $solicitud->imagen;
+        }
         $solicitud->usercartero         = $request->usercartero ?? 'Sin responsable';
         $solicitud->save();
 
@@ -291,6 +333,10 @@ public function actualizarEstadoConFirma(Request $request)
         ], 200);
 
     } catch (\Exception $e) {
+        Log::error('Error en actualizarEstadoConFirma', [
+            'guia' => $request->input('guia'),
+            'message' => $e->getMessage(),
+        ]);
         return response()->json([
             'error'   => 'Error al actualizar la solicitud',
             'detalle' => $e->getMessage()

@@ -78,5 +78,5 @@ Route::post('solicitudes/ems', 'SolicitudeController@storeEMS');
     Route::post('/transportes', [SolicitudeController::class, 'registrarTransporte']);
     Route::get('/transportes', [SolicitudeController::class, 'listarTransportes']);
     Route::get('/transportes/{id}', [SolicitudeController::class, 'mostrarTransporte']);
-
+Route::post('solicitudes/entregados', [SolicitudeController::class, 'storeEntregadoManual']);
 });

@@ -26,17 +26,40 @@ use Illuminate\Support\Facades\Log;
 
 class SolicitudeController extends Controller
 {
+    protected function logImagenRequest(Request $request, string $context, ?string $guia = null): void
+    {
+        $img = $request->input('imagen');
+        Log::info("{$context} payload imagen", [
+            'guia' => $guia ?? $request->input('guia'),
+            'has_imagen_key' => $request->has('imagen'),
+            'imagen_is_string' => is_string($img),
+            'imagen_length' => is_string($img) ? strlen($img) : null,
+            'imagen_prefix' => is_string($img) ? substr($img, 0, 60) : null,
+            'content_type' => $request->header('Content-Type'),
+            'ip' => $request->ip(),
+        ]);
+    }
+
     protected function optimizeImage($imageData)
     {
-        if ($imageData) {
-            return (string) Image::make($imageData)
+        if (empty($imageData) || !is_string($imageData)) {
+            return null;
+        }
+
+        try {
+            return (string) Image::make(trim($imageData))
                 ->resize(300, null, function ($constraint) {
                     $constraint->aspectRatio();
                 })
                 ->encode('webp', 50)
                 ->encode('data-url');
+        } catch (\Throwable $e) {
+            Log::error('Error optimizando imagen en SolicitudeController', [
+                'message' => $e->getMessage(),
+            ]);
+            // Fallback: guardar original para no perder la imagen.
+            return trim($imageData);
         }
-        return null;
     }
     public function index()
     {
@@ -66,22 +89,10 @@ class SolicitudeController extends Controller
 
     public function store(Request $request)
     {
+        $this->logImagenRequest($request, 'SolicitudeController@store');
 
-        // Extraer la imagen en base64 del request
-        $imageData = $request->input('imagen'); // Base64 image data
-
-        // Si existe una imagen, optimizarla
-        if ($imageData) {
-            // Optimizar la imagen usando Intervention Image
-            $img = Image::make($imageData)->resize(300, null, function ($constraint) {
-                $constraint->aspectRatio();
-            })->encode('webp', 50); // Redimensionar y comprimir en formato WebP con calidad 50%
-
-            // Convertir la imagen optimizada de vuelta a base64
-            $optimizedImage = (string) $img->encode('data-url'); // Imagen optimizada en base64 en formato WebP
-        } else {
-            $optimizedImage = null; // O manejarlo como desees si no hay imagen
-        }
+        // Extraer y optimizar imagen en base64 (si existe)
+        $optimizedImage = $this->optimizeImage($request->input('imagen'));
 
         // Crear una nueva instancia de Solicitude
         $solicitude = new Solicitude();
@@ -178,41 +189,48 @@ class SolicitudeController extends Controller
 
     public function update(Request $request, Solicitude $solicitude)
     {
-        $solicitude->tarifa_id = $request->tarifa_id ?? null;
-        $solicitude->sucursale_id = $request->sucursale_id;
-        $solicitude->cartero_recogida_id = $request->cartero_recogida_id ?? null;
-        $solicitude->cartero_entrega_id = $request->cartero_entrega_id ?? null;
-        $solicitude->direccion_id = $request->direccion_id ?? null;
-        $solicitude->encargado_id = $request->encargado_id ?? null;
-        $solicitude->guia = $request->guia;
-        $solicitude->peso_o = $request->peso_o;
-        $solicitude->peso_v = $request->peso_v;
-        $solicitude->remitente = $request->remitente;
-        $solicitude->telefono = $request->telefono;
-        $solicitude->contenido = $request->contenido;
-        $solicitude->fecha = $request->fecha;
-        $solicitude->firma_o = $request->firma_o;
-        $solicitude->destinatario = $request->destinatario;
-        $solicitude->telefono_d = $request->telefono_d;
-        $solicitude->direccion_d = $request->direccion_d;
-        $solicitude->direccion_especifica_d = $request->direccion_especifica_d;
-        $solicitude->ciudad = $request->ciudad;
-        $solicitude->firma_d = $request->firma_d;
-        $solicitude->nombre_d = $request->nombre_d;
-        $solicitude->fecha_d = $request->fecha_d;
-        $solicitude->estado = $request->estado;
-        $solicitude->observacion = $request->observacion;
-        $solicitude->zona_d = $request->zona_d;
-        $solicitude->justificacion = $request->justificacion;
-        $solicitude->imagen_justificacion = $request->imagen_justificacion;
-        $solicitude->imagen = $request->imagen;
-        $solicitude->fecha_recojo_c = $request->fecha_recojo_c;
-        $solicitude->fecha_devolucion = $request->fecha_devolucion;
-        $solicitude->imagen_devolucion = $request->imagen_devolucion;
-        $solicitude->entrega_observacion = $request->entrega_observacion;
-        $solicitude->fecha_envio_regional = $request->fecha_envio_regional; // Asigna la fecha actual si no se proporciona
-        $solicitude->peso_r = $request->peso_r; // Asigna la fecha actual si no se proporciona
-        $solicitude->encargado_regional_id = $request->encargado_regional_id; // Asignar el cartero de entrega
+        $this->logImagenRequest($request, 'SolicitudeController@update', $solicitude->guia);
+        $solicitude->tarifa_id = $request->input('tarifa_id', $solicitude->tarifa_id);
+        $solicitude->sucursale_id = $request->input('sucursale_id', $solicitude->sucursale_id);
+        $solicitude->cartero_recogida_id = $request->input('cartero_recogida_id', $solicitude->cartero_recogida_id);
+        $solicitude->cartero_entrega_id = $request->input('cartero_entrega_id', $solicitude->cartero_entrega_id);
+        $solicitude->direccion_id = $request->input('direccion_id', $solicitude->direccion_id);
+        $solicitude->encargado_id = $request->input('encargado_id', $solicitude->encargado_id);
+        $solicitude->guia = $request->input('guia', $solicitude->guia);
+        $solicitude->peso_o = $request->input('peso_o', $solicitude->peso_o);
+        $solicitude->peso_v = $request->input('peso_v', $solicitude->peso_v);
+        $solicitude->remitente = $request->input('remitente', $solicitude->remitente);
+        $solicitude->telefono = $request->input('telefono', $solicitude->telefono);
+        $solicitude->contenido = $request->input('contenido', $solicitude->contenido);
+        $solicitude->fecha = $request->input('fecha', $solicitude->fecha);
+        $solicitude->firma_o = $request->input('firma_o', $solicitude->firma_o);
+        $solicitude->destinatario = $request->input('destinatario', $solicitude->destinatario);
+        $solicitude->telefono_d = $request->input('telefono_d', $solicitude->telefono_d);
+        $solicitude->direccion_d = $request->input('direccion_d', $solicitude->direccion_d);
+        $solicitude->direccion_especifica_d = $request->input('direccion_especifica_d', $solicitude->direccion_especifica_d);
+        $solicitude->ciudad = $request->input('ciudad', $solicitude->ciudad);
+        $solicitude->firma_d = $request->input('firma_d', $solicitude->firma_d);
+        $solicitude->nombre_d = $request->input('nombre_d', $solicitude->nombre_d);
+        $solicitude->fecha_d = $request->input('fecha_d', $solicitude->fecha_d);
+        $solicitude->estado = $request->input('estado', $solicitude->estado);
+        $solicitude->observacion = $request->input('observacion', $solicitude->observacion);
+        $solicitude->zona_d = $request->input('zona_d', $solicitude->zona_d);
+        $solicitude->justificacion = $request->input('justificacion', $solicitude->justificacion);
+        $solicitude->imagen_justificacion = $request->input('imagen_justificacion', $solicitude->imagen_justificacion);
+        // No sobrescribir imagen existente cuando el request no incluye imagen.
+        if ($request->has('imagen')) {
+            $incomingImage = $request->input('imagen');
+            $solicitude->imagen = !empty($incomingImage)
+                ? ($this->optimizeImage($incomingImage) ?? $solicitude->imagen)
+                : $solicitude->imagen;
+        }
+        $solicitude->fecha_recojo_c = $request->input('fecha_recojo_c', $solicitude->fecha_recojo_c);
+        $solicitude->fecha_devolucion = $request->input('fecha_devolucion', $solicitude->fecha_devolucion);
+        $solicitude->imagen_devolucion = $request->input('imagen_devolucion', $solicitude->imagen_devolucion);
+        $solicitude->entrega_observacion = $request->input('entrega_observacion', $solicitude->entrega_observacion);
+        $solicitude->fecha_envio_regional = $request->input('fecha_envio_regional', $solicitude->fecha_envio_regional);
+        $solicitude->peso_r = $request->input('peso_r', $solicitude->peso_r);
+        $solicitude->encargado_regional_id = $request->input('encargado_regional_id', $solicitude->encargado_regional_id);
         Evento::create([
             'accion' => 'Entregado',
             'encargado_id' => $solicitude->encargado_id,  // Asignar encargado
@@ -636,7 +654,12 @@ class SolicitudeController extends Controller
             $solicitude->estado = 11;
             $solicitude->observacion = $request->observacion;
             $solicitude->fecha_d = $request->fecha_d ?? now(); // Asigna la fecha actual si no se proporciona
-            $solicitude->imagen = $request->imagen;
+            if ($request->has('imagen')) {
+                $incomingImage = $request->input('imagen');
+                $solicitude->imagen = !empty($incomingImage)
+                    ? ($this->optimizeImage($incomingImage) ?? $solicitude->imagen)
+                    : $solicitude->imagen;
+            }
             $solicitude->save();
             Evento::create([
                 'accion' => 'Rechazado',
@@ -1053,7 +1076,85 @@ public function mostrarTransporte($id)
     return response()->json($transporte);
 }
 
+public function storeEntregadoManual(Request $request)
+{
+    $data = $request->validate([
+        'sucursale_id'     => 'nullable|integer|exists:sucursales,id',
+        'guia'             => 'required|string|max:255',
+        'peso_r'           => 'nullable|string|max:255',
+        'remitente'        => 'required|string|max:255',
+        'telefono'         => 'required|string|max:255',
+        'contenido'        => 'required|string|max:255',
+        'destinatario'     => 'required|string|max:255',
+        'telefono_d'       => 'required|string|max:255',
+        'direccion_d'      => 'nullable|string|max:255',
+        'reencaminamiento' => 'nullable|string|max:255',
+        'imagen'           => 'nullable|string', // base64 data-url
+    ]);
 
+    // ✅ optimizar imagen como ya haces
+    $optimizedImage = null;
+    if (!empty($data['imagen'])) {
+        try {
+            $optimizedImage = (string) Image::make($data['imagen'])
+                ->resize(300, null, function ($constraint) {
+                    $constraint->aspectRatio();
+                })
+                ->encode('webp', 50)
+                ->encode('data-url');
+        } catch (\Throwable $e) {
+            // si falla la imagen, no rompas la creación
+            $optimizedImage = null;
+        }
+    }
+
+    // ✅ fecha formato dd/mm/yyyy HH:MM (igual que en Vue)
+    $fecha_d = now()->format('d/m/Y H:i');
+
+    $solicitude = new Solicitude();
+    $solicitude->sucursale_id     = $data['sucursale_id'] ?? null;
+    $solicitude->tarifa_id        = null;
+
+    // si tienes login de carteros, aquí puedes usar Auth::id()
+    $solicitude->cartero_entrega_id = Auth::id(); // si tu auth coincide con carteros
+    $solicitude->estado           = 3;
+    $solicitude->fecha_d          = $fecha_d;
+
+    $solicitude->guia             = $data['guia'];
+    $solicitude->peso_r           = $data['peso_r'] ?? null;
+    $solicitude->remitente        = $data['remitente'];
+    $solicitude->telefono         = $data['telefono'];
+    $solicitude->contenido        = $data['contenido'];
+    $solicitude->destinatario     = $data['destinatario'];
+    $solicitude->telefono_d       = $data['telefono_d'];
+    $solicitude->direccion_d      = $data['direccion_d'] ?? null;
+    $solicitude->reencaminamiento = $data['reencaminamiento'] ?? null;
+
+    // defaults para NOT NULL (según tu migración)
+    $solicitude->direccion_especifica_d = $solicitude->direccion_especifica_d ?? 'N/D';
+    $solicitude->zona_d = $solicitude->zona_d ?? 'N/D';
+
+    $solicitude->imagen = $optimizedImage;
+
+    // código barras opcional (si quieres)
+    try {
+        $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
+        $barcode = $generator->getBarcode($solicitude->guia, $generator::TYPE_CODE_128);
+        $solicitude->codigo_barras = base64_encode($barcode);
+    } catch (\Throwable $e) {}
+
+    $solicitude->save();
+
+    Evento::create([
+        'accion' => 'Entregado Manual',
+        'sucursale_id' => $solicitude->sucursale_id,
+        'descripcion' => 'Registro manual de envío entregado',
+        'codigo' => $solicitude->guia,
+        'fecha_hora' => now(),
+    ]);
+
+    return response()->json($solicitude, 201);
+}
 
 }
 
