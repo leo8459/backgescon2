@@ -14,12 +14,10 @@ use App\Http\Controllers\SolicitudeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardCarteroController;
 Route::post('/login', 'UserController@login');
-    Route::apiResource('/users1', 'UserController')->parameters(['users1' => 'user']);
-
 Route::middleware(['auth:api_admin'])->group(function () { 
     Route::get('codigos/totales', 'CodigoController@totales');
 
-    // Route::apiResource('/users1', 'UserController')->parameters(['users1' => 'user']);
+    Route::apiResource('/users1', 'UserController')->parameters(['users1' => 'user']);
     Route::apiResource('/empresas1', 'EmpresaController')->parameters(['empresas1' => 'empresa']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/sucursales1', 'SucursaleController')->parameters(['sucursales1' => 'sucursale']);  //editar agragar eliminar listar apiresource
     Route::apiResource('/tarifas1', 'TarifaController')->parameters(['tarifas1' => 'tarifa']);  //editar agragar eliminar listar apiresource
