@@ -961,8 +961,8 @@ public function storeEMS(Request $request)
 public function registrarTransporte(Request $request)
 {
     $data = $request->validate([
-        'transportadora' => 'required|string|max:255',
-        'provincia' => 'required|string|max:255',
+        'transportadora' => 'nullable|string|max:255',
+        'provincia' => 'nullable|string|max:255',
         'cartero_id' => 'required|integer|exists:carteros,id',
         'n_recibo' => 'nullable|string|max:255',
         'n_factura' => 'nullable|string|max:255',
@@ -1012,11 +1012,11 @@ public function registrarTransporte(Request $request)
             });
 
             $transporte = Transporte::create([
-                'transportadora' => $data['transportadora'],
-                'provincia' => $data['provincia'],
+                'transportadora' => trim((string) ($data['transportadora'] ?? '')),
+                'provincia' => trim((string) ($data['provincia'] ?? '')),
                 'cartero_id' => $data['cartero_id'],
-                'n_recibo' => $data['n_recibo'] ?? null,
-                'n_factura' => $data['n_factura'] ?? null,
+                'n_recibo' => isset($data['n_recibo']) && trim((string) $data['n_recibo']) !== '' ? trim((string) $data['n_recibo']) : null,
+                'n_factura' => isset($data['n_factura']) && trim((string) $data['n_factura']) !== '' ? trim((string) $data['n_factura']) : null,
                 'precio_total' => $data['precio_total'] ?? 0,
                 'peso_total' => $data['peso_total'] ?? $pesoTotalCalculado,
                 'guias' => $solicitudes->pluck('guia')->values()->all(),
