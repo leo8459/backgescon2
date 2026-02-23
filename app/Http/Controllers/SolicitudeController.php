@@ -395,6 +395,12 @@ class SolicitudeController extends Controller
         }
         $sucursalOrigin = strtoupper(trim((string) $sucursal->origen));
 
+        // Numero de sucursal tomado del nombre (ej: "GESTORA SRZ 4" => "4", "GESTORA SRZ 12" => "12")
+        $sucursalNumero = '0';
+        if (preg_match('/(\d+)\s*$/', trim((string) $sucursal->nombre), $matches)) {
+            $sucursalNumero = $matches[1];
+        }
+
         // Prioridad: tarifa->departamento, luego reencaminamiento, luego "000"
         if ($tarifa) {
             $destino = strtoupper(preg_replace('/\s+/', '', trim((string) $tarifa->departamento)));
@@ -421,7 +427,7 @@ class SolicitudeController extends Controller
         }
 
         $newNumber = str_pad((string) ($lastNumber + 1), 5, '0', STR_PAD_LEFT);
-        $newGuia = "{$sucursalCode}{$sucursalOrigin}{$tarifaCode}{$newNumber}";
+        $newGuia = "{$sucursalCode}{$sucursalOrigin}{$sucursalNumero}{$tarifaCode}{$newNumber}";
 
         return response()->json(['guia' => $newGuia]);
     }
