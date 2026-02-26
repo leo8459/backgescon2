@@ -620,7 +620,7 @@ class SolicitudeController extends Controller
             $solicitude->cartero_entrega_id = $request->cartero_entrega_id; // Asignar el cartero de entrega
             $solicitude->save();
             Evento::create([
-                'accion' => 'En camino',
+                'accion' => 'En camino a regional',
                 'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,  // Si no hay cartero_entrega_id, usa cartero_recogida_id
                 'descripcion' => 'Envio en camino',
                 'codigo' => $solicitude->guia,
