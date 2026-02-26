@@ -61,6 +61,35 @@ class SolicitudeController extends Controller
             return trim($imageData);
         }
     }
+
+    protected function resolveEncargadoRegionalId(Request $request, ?Solicitude $solicitude = null): ?int
+    {
+        $hasEncargadoRegional = $request->exists('encargado_regional_id');
+
+        if (!$hasEncargadoRegional && $solicitude) {
+            return $solicitude->encargado_regional_id;
+        }
+
+        $candidates = [
+            $request->input('encargado_regional_id'),
+            $request->input('cartero_recogida_id'),
+            $solicitude?->cartero_recogida_id,
+            $solicitude?->encargado_regional_id,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if ($candidate === null || $candidate === '') {
+                continue;
+            }
+
+            $id = (int) $candidate;
+            if ($id > 0 && Encargado::whereKey($id)->exists()) {
+                return $id;
+            }
+        }
+
+        return null;
+    }
     public function index()
     {
         $solicitudes = Solicitude::with(['carteroRecogida', 'carteroEntrega', 'sucursale', 'tarifa', 'direccion', 'encargado', 'encargadoregional', 'transporte'])->get();
@@ -144,7 +173,7 @@ class SolicitudeController extends Controller
         $solicitude->zona_d = $request->zona_d;
         $solicitude->justificacion = $request->justificacion;
         $solicitude->imagen_justificacion = $request->imagen_justificacion;
-        $solicitude->encargado_regional_id = $request->encargado_regional_id; // Asignar el cartero de entrega
+        $solicitude->encargado_regional_id = $this->resolveEncargadoRegionalId($request);
 
         // Asignar la imagen optimizada en formato WebP al modelo
         $solicitude->imagen = $optimizedImage;
@@ -190,6 +219,7 @@ class SolicitudeController extends Controller
     public function update(Request $request, Solicitude $solicitude)
     {
         $this->logImagenRequest($request, 'SolicitudeController@update', $solicitude->guia);
+        $estadoAnterior = (int) $solicitude->estado;
         $solicitude->tarifa_id = $request->input('tarifa_id', $solicitude->tarifa_id);
         $solicitude->sucursale_id = $request->input('sucursale_id', $solicitude->sucursale_id);
         $solicitude->cartero_recogida_id = $request->input('cartero_recogida_id', $solicitude->cartero_recogida_id);
@@ -230,20 +260,20 @@ class SolicitudeController extends Controller
         $solicitude->entrega_observacion = $request->input('entrega_observacion', $solicitude->entrega_observacion);
         $solicitude->fecha_envio_regional = $request->input('fecha_envio_regional', $solicitude->fecha_envio_regional);
         $solicitude->peso_r = $request->input('peso_r', $solicitude->peso_r);
-        $solicitude->encargado_regional_id = $request->input('encargado_regional_id', $solicitude->encargado_regional_id);
-        Evento::create([
-            'accion' => 'Entregado',
-            'encargado_id' => $solicitude->encargado_id,  // Asignar encargado
-            'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,  // Si no hay cartero_entrega_id, usa cartero_recogida_id
-            'descripcion' => 'Envio entregado con exito',
-            'codigo' => $solicitude->guia,
-            'fecha_hora' => now(),
-        ]);
-
-
-
+        $solicitude->encargado_regional_id = $this->resolveEncargadoRegionalId($request, $solicitude);
 
         $solicitude->save();
+
+        if ($request->has('estado') && (int) $solicitude->estado === 3 && $estadoAnterior !== 3) {
+            Evento::create([
+                'accion' => 'Entregado',
+                'encargado_id' => $solicitude->encargado_id,
+                'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,
+                'descripcion' => 'Envio entregado con exito',
+                'codigo' => $solicitude->guia,
+                'fecha_hora' => now(),
+            ]);
+        }
 
         return $solicitude;
     }
@@ -586,14 +616,37 @@ class SolicitudeController extends Controller
     public function MandarRegional(Request $request, Solicitude $solicitude)
     {
         try {
-            // Lo demÃ¡s que ya tenÃ­as...
+            $carteroAuthId = Auth::guard('api_cartero')->id();
+            $encargadoAuthId = Auth::guard('api_encargado')->id();
+
             $solicitude->estado = 8;
             $solicitude->fecha_envio_regional = $request->fecha_envio_regional ?? now();
-            $solicitude->encargado_id = $request->encargado_id;
+
+            // Prioridad: cartero logueado -> cartero enviado por payload -> cartero existente en solicitud.
+            $incomingCarteroId = $request->input('cartero_recogida_id');
+            $actorCarteroId = $carteroAuthId
+                ?: (($incomingCarteroId !== null && $incomingCarteroId !== '') ? (int) $incomingCarteroId : null)
+                ?: ($solicitude->cartero_recogida_id ?: null);
+
+            if ($actorCarteroId) {
+                $solicitude->cartero_recogida_id = $actorCarteroId;
+                $solicitude->cartero_entrega_id = null;
+                $solicitude->encargado_id = null;
+            } else {
+                // Compatibilidad para flujo de encargado.
+                if ($encargadoAuthId) {
+                    $solicitude->encargado_id = $encargadoAuthId;
+                } elseif ($request->filled('encargado_id')) {
+                    $encargadoCandidate = (int) $request->input('encargado_id');
+                    if ($encargadoCandidate > 0 && Encargado::whereKey($encargadoCandidate)->exists()) {
+                        $solicitude->encargado_id = $encargadoCandidate;
+                    }
+                }
+            }
+
             $solicitude->peso_v = $request->peso_v;
             $solicitude->nombre_d = $request->nombre_d;
 
-            // <-- AquÃ­ guardas en la columna 'reencaminamiento' el departamento.
             if ($request->has('reencaminamiento')) {
                 $solicitude->reencaminamiento = $request->reencaminamiento;
             }
@@ -601,12 +654,14 @@ class SolicitudeController extends Controller
             $solicitude->save();
 
             Evento::create([
-                'accion' => 'Transito',
-                'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,
+                'accion' => 'Transito a regional',
+                'cartero_id' => $actorCarteroId ?: null,
+                'encargado_id' => $actorCarteroId ? null : ($solicitude->encargado_id ?? $solicitude->encargado_regional_id),
                 'descripcion' => 'Despacho de envio a regional',
                 'codigo' => $solicitude->guia,
                 'fecha_hora' => now(),
             ]);
+
             return response()->json($solicitude);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Error al marcar la solicitud como rechazada.', 'exception' => $e->getMessage()], 500);
@@ -620,7 +675,7 @@ class SolicitudeController extends Controller
             $solicitude->cartero_entrega_id = $request->cartero_entrega_id; // Asignar el cartero de entrega
             $solicitude->save();
             Evento::create([
-                'accion' => 'En camino a regional',
+                'accion' => 'En camino',
                 'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,  // Si no hay cartero_entrega_id, usa cartero_recogida_id
                 'descripcion' => 'Envio en camino',
                 'codigo' => $solicitude->guia,
@@ -637,17 +692,21 @@ class SolicitudeController extends Controller
     public function RecibirPaquete(Request $request, Solicitude $solicitude)
     {
         $solicitude->estado = 10;
-        $solicitude->encargado_regional_id = $request->encargado_regional_id; // Asignar el cartero de entrega
+        $solicitude->cartero_recogida_id = $request->input('cartero_recogida_id', $solicitude->cartero_recogida_id);
+        $solicitude->cartero_entrega_id = null;
+        $solicitude->encargado_regional_id = $this->resolveEncargadoRegionalId($request, $solicitude);
         $solicitude->peso_r = $request->peso_r; // Actualizar el peso
         $solicitude->nombre_d = $request->nombre_d; // Actualizar el nombre destinatario
         $solicitude->save();
+
         Evento::create([
             'accion' => 'Recibido en oficina',
-            'encargado_id' => $solicitude->encargado_id ?? $solicitude->encargado_regional_id,  // Si no hay encargado_id, usa encargado_regional_id
-            'descripcion' => 'Recibir envÃ­o en oficina de entrega',
+            'cartero_id' => $solicitude->cartero_recogida_id,
+            'descripcion' => 'Recibir envio en oficina de entrega',
             'codigo' => $solicitude->guia,
             'fecha_hora' => now(),
         ]);
+
         return response()->json($solicitude);
     }
 
@@ -714,7 +773,7 @@ class SolicitudeController extends Controller
         try {
             // Cambiar el estado a 13
             $solicitude->estado = 13;
-            $solicitude->encargado_regional_id = $request->encargado_regional_id; // Asignar el cartero de entrega
+            $solicitude->encargado_regional_id = $this->resolveEncargadoRegionalId($request, $solicitude);
             $solicitude->nombre_d = $request->nombre_d; // Actualizar el nombre destinatario
             $solicitude->save();
             $solicitude->peso_r = $request->peso_r; // Actualizar el peso
@@ -1163,4 +1222,7 @@ public function storeEntregadoManual(Request $request)
 }
 
 }
+
+
+
 

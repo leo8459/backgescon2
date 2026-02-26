@@ -38,6 +38,7 @@ Route::middleware(['auth:api_cartero'])->group(function () {
     Route::put('/rechazado/{solicitude}', [SolicitudeController::class, 'Rechazado']);
     Route::put('/devolucion/{solicitude}', [SolicitudeController::class, 'Devolucion']);
     Route::put('/encaminoregional/{solicitude}', [SolicitudeController::class, 'EnCaminoRegional']);
+    Route::put('/recibirpaquetes/{solicitude}', [SolicitudeController::class, 'RecibirPaquete']);
     Route::put('solicitudes/registrar-contrato/{id}', [SolicitudeController::class, 'registrarContrato']);
 
     // Tarifas
@@ -73,6 +74,7 @@ Route::middleware(['auth:api_cartero'])->group(function () {
     // ✅ Registro manual
     Route::post('/solicitudes/manual', [SolicitudeController::class, 'storeManual']);
 Route::post('solicitudes/ems', 'SolicitudeController@storeEMS');
+Route::put('/mandarregional/{solicitude}', [SolicitudeController::class, 'MandarRegional']);
 
     // Transporte
     Route::post('/transportes', [SolicitudeController::class, 'registrarTransporte']);

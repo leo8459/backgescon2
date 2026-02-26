@@ -31,6 +31,7 @@ Route::middleware(['auth:api_encargado'])->group(function () {
     Route::put('/verificarsolicitudes5/{solicitude}', 'SolicitudeController@markAsVerified');
     Route::put('/rechazado5/{solicitude}', 'SolicitudeController@Rechazado');
     Route::put('/encaminoregional5/{solicitude}', 'SolicitudeController@EnCaminoRegional');
+    Route::put('/recibirpaquetes/{solicitude}', 'SolicitudeController@RecibirPaquete');
     Route::put('/recibirpaquetes5/{solicitude}', 'SolicitudeController@RecibirPaquete');
     Route::put('/verificarreturn5/{solicitude}', 'SolicitudeController@returnverificar');
     Route::put('/reencaminar5/{solicitude}', 'SolicitudeController@reencaminar');
