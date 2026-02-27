@@ -571,7 +571,14 @@ class SolicitudeController extends Controller
     public function returnverificar(Request $request, Solicitude $solicitude)
     {
         try {
+            $data = $request->validate([
+                'imagen_devolucion' => 'nullable',
+            ]);
+
             $solicitude->estado = 6;
+            if (array_key_exists('imagen_devolucion', $data)) {
+                $solicitude->imagen_devolucion = empty($data['imagen_devolucion']) ? null : $data['imagen_devolucion'];
+            }
             $solicitude->save();
             Evento::create([
                 'accion' => 'Rechazado',
@@ -591,11 +598,18 @@ class SolicitudeController extends Controller
     public function Devolucion(Request $request, Solicitude $solicitude)
     {
         try {
+            $data = $request->validate([
+                'fecha_devolucion' => 'nullable',
+                'imagen_devolucion' => 'nullable',
+                'firma_o' => 'nullable',
+                'cartero_entrega_id' => 'nullable|integer|exists:carteros,id',
+            ]);
+
             $solicitude->estado = 7;
-            $solicitude->fecha_devolucion = $request->fecha_devolucion ?? now(); // Asigna la fecha actual si no se proporciona
-            $solicitude->imagen_devolucion = $request->imagen_devolucion;
-            $solicitude->firma_o = $request->firma_o;
-            $solicitude->cartero_entrega_id = $request->cartero_entrega_id; // Asignar el cartero de entrega
+            $solicitude->fecha_devolucion = $data['fecha_devolucion'] ?? now(); // Asigna la fecha actual si no se proporciona
+            $solicitude->imagen_devolucion = empty($data['imagen_devolucion']) ? null : $data['imagen_devolucion'];
+            $solicitude->firma_o = $data['firma_o'] ?? null;
+            $solicitude->cartero_entrega_id = $data['cartero_entrega_id'] ?? null; // Asignar el cartero de entrega
 
             $solicitude->save();
             Evento::create([
@@ -713,17 +727,23 @@ class SolicitudeController extends Controller
     public function Rechazado(Request $request, Solicitude $solicitude)
     {
         try {
+            $data = $request->validate([
+                'observacion' => 'nullable|string|max:255',
+                'fecha_d' => 'nullable',
+                'imagen' => 'nullable',
+            ]);
+
             // Optimizar la imagen utilizando el mÃ©todo optimizeImage
 
             // Asignar los valores al modelo
             $solicitude->estado = 11;
-            $solicitude->observacion = $request->observacion;
-            $solicitude->fecha_d = $request->fecha_d ?? now(); // Asigna la fecha actual si no se proporciona
-            if ($request->has('imagen')) {
-                $incomingImage = $request->input('imagen');
+            $solicitude->observacion = $data['observacion'] ?? null;
+            $solicitude->fecha_d = $data['fecha_d'] ?? now(); // Asigna la fecha actual si no se proporciona
+            if (array_key_exists('imagen', $data)) {
+                $incomingImage = $data['imagen'];
                 $solicitude->imagen = !empty($incomingImage)
                     ? ($this->optimizeImage($incomingImage) ?? $solicitude->imagen)
-                    : $solicitude->imagen;
+                    : null;
             }
             $solicitude->save();
             Evento::create([
