@@ -28,6 +28,7 @@ Route::middleware(['auth:api_gestore'])->group(function () {
     Route::put('/solicitudesrecojo3/{solicitude}/', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega3/{solicitude}/', 'SolicitudeController@markAsEntregado');
     Route::put('/marcarrecogido3/{solicitude}/', 'SolicitudeController@marcarRecogido');
+    Route::put('/devueltoalmacen3/{solicitude}/', 'SolicitudeController@markAsDevueltoAlmacen');
     Route::put('/validar3/{tarifa}/inactivar', 'TarifaController@markAsInactive');
 
 

@@ -36,6 +36,7 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
     Route::put('/solicitudesrecojo2/{solicitude}/', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega2/{solicitude}/', 'SolicitudeController@markAsEntregado');
     Route::put('/marcarrecogido2/{solicitude}/', 'SolicitudeController@marcarRecogido');
+    Route::put('/devueltoalmacen2/{solicitude}/', 'SolicitudeController@markAsDevueltoAlmacen');
     Route::put('/solicitudes2/{solicitude}/destroy', 'SolicitudeController@destroy');
 
 

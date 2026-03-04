@@ -35,6 +35,7 @@ Route::middleware(['auth:api_cartero'])->group(function () {
     Route::put('/solicitudesrecojo/{solicitude}', [SolicitudeController::class, 'markAsEnCamino']);
     Route::put('/solicitudesentrega/{solicitude}', [SolicitudeController::class, 'markAsEntregado']);
     Route::put('/marcarrecogido/{solicitude}', [SolicitudeController::class, 'marcarRecogido']);
+    Route::put('/devueltoalmacen/{solicitude}', [SolicitudeController::class, 'markAsDevueltoAlmacen']);
     Route::put('/rechazado/{solicitude}', [SolicitudeController::class, 'Rechazado']);
     Route::put('/devolucion/{solicitude}', [SolicitudeController::class, 'Devolucion']);
     Route::put('/encaminoregional/{solicitude}', [SolicitudeController::class, 'EnCaminoRegional']);

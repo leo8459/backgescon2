@@ -40,3 +40,4 @@ Route::get('/solicitudes/manifiesto/{manifiesto}', [ApiController::class, 'solic
 Route::get('/solicitudes/buscar-por-codigo/{codigo}', [ApiController::class, 'solicitudPorCodigo']);
 Route::put('/solicitudes/cambiar-estado', [ApiController::class, 'cambiarEstadoPorGuia']);
 Route::put('/solicitud/actualizar-estado', [ApiController::class, 'actualizarEstadoConFirma']);
+Route::put('/solicitudes/devuelto-almacen/{solicitude}', [SolicitudeController::class, 'markAsDevueltoAlmacen']);

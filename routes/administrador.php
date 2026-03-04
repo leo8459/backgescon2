@@ -33,6 +33,7 @@ Route::middleware(['auth:api_admin'])->group(function () {
     Route::put('/solicitudesrecojo/{solicitude}/', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega/{solicitude}/', 'SolicitudeController@markAsEntregado');
     Route::put('/marcarrecogido/{solicitude}/', 'SolicitudeController@marcarRecogido');
+    Route::put('/devueltoalmacen/{solicitude}/', 'SolicitudeController@markAsDevueltoAlmacen');
     Route::put('solicitudes/{id}/cambiar-estado', 'SolicitudeController@cambiarEstado');
 
 

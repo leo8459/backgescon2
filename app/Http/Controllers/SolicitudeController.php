@@ -617,6 +617,45 @@ class SolicitudeController extends Controller
         }
     }
 
+    public function markAsDevueltoAlmacen(Request $request, Solicitude $solicitude)
+    {
+        try {
+            $solicitude->estado = 5;
+
+            if ($request->filled('observacion')) {
+                $solicitude->observacion = $request->input('observacion');
+            }
+
+            if ($request->filled('cartero_recogida_id')) {
+                $solicitude->cartero_recogida_id = (int) $request->input('cartero_recogida_id');
+            }
+
+            $solicitude->save();
+
+            $carteroId = $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id;
+            $encargadoId = $carteroId ? null : ($solicitude->encargado_id ?? $solicitude->encargado_regional_id);
+
+            Evento::create([
+                'accion' => 'Devuelto a almacen',
+                'cartero_id' => $carteroId,
+                'encargado_id' => $encargadoId,
+                'descripcion' => 'Devuelto a almacen',
+                'codigo' => $solicitude->guia,
+                'fecha_hora' => now(),
+            ]);
+
+            return response()->json([
+                'message' => 'Solicitud devuelta a almacen correctamente.',
+                'solicitude' => $solicitude,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al devolver la solicitud a almacen.',
+                'exception' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
 
 
 

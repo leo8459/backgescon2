@@ -25,6 +25,7 @@ Route::middleware(['auth:api_contratos'])->group(function () {
     Route::apiResource('/eventos4', 'EventoController');
 
     Route::put('/validar4/{tarifa}/inactivar', 'TarifaController@markAsInactive');
+    Route::put('/devueltoalmacen4/{solicitude}', 'SolicitudeController@markAsDevueltoAlmacen');
 
 
 
