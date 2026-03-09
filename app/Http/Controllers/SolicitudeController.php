@@ -9,6 +9,7 @@ use App\Models\Encargado;
 use App\Models\Tarifa;
 use App\Models\Direccione;
 use App\Models\Transporte;
+use App\Models\Cartero;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\DB;
@@ -84,6 +85,33 @@ class SolicitudeController extends Controller
 
             $id = (int) $candidate;
             if ($id > 0 && Encargado::whereKey($id)->exists()) {
+                return $id;
+            }
+        }
+
+        return null;
+    }
+
+    protected function resolveCarteroId(Request $request, ?Solicitude $solicitude = null): ?int
+    {
+        $carteroAuthId = Auth::guard('api_cartero')->id();
+
+        $candidates = [
+            $request->input('cartero_entrega_id'),
+            $request->input('cartero_recogida_id'),
+            $request->input('cartero_id'),
+            $carteroAuthId,
+            $solicitude?->cartero_entrega_id,
+            $solicitude?->cartero_recogida_id,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if ($candidate === null || $candidate === '') {
+                continue;
+            }
+
+            $id = (int) $candidate;
+            if ($id > 0 && Cartero::whereKey($id)->exists()) {
                 return $id;
             }
         }
@@ -588,7 +616,14 @@ class SolicitudeController extends Controller
     public function markAsEnCamino(Request $request, Solicitude $solicitude)
     {
         $solicitude->estado = 2; // Cambiar estado a "En camino"
-        $solicitude->cartero_entrega_id = $request->cartero_entrega_id; // Asignar el cartero logueado
+        $carteroId = $this->resolveCarteroId($request, $solicitude);
+        if ($carteroId !== null) {
+            $solicitude->cartero_entrega_id = $carteroId;
+            // Para EMS permitimos usar el mismo cartero como referencia de recogida cuando falta.
+            if (($solicitude->tipo_correspondencia ?? null) === 'EMS' && empty($solicitude->cartero_recogida_id)) {
+                $solicitude->cartero_recogida_id = $carteroId;
+            }
+        }
         $solicitude->recojo_observacion = $request->recojo_observacion; // Asignar el cartero logueado
         $solicitude->save();
         Evento::create([
@@ -606,7 +641,13 @@ class SolicitudeController extends Controller
     public function markAsEntregado(Request $request, Solicitude $solicitude)
     {
         $solicitude->estado = 2; // Cambiar estado a "En camino"
-        $solicitude->cartero_entrega_id = $request->cartero_entrega_id; // Asignar el cartero de entrega
+        $carteroId = $this->resolveCarteroId($request, $solicitude);
+        if ($carteroId !== null) {
+            $solicitude->cartero_entrega_id = $carteroId;
+            if (($solicitude->tipo_correspondencia ?? null) === 'EMS' && empty($solicitude->cartero_recogida_id)) {
+                $solicitude->cartero_recogida_id = $carteroId;
+            }
+        }
         $solicitude->peso_v = $request->peso_v; // Actualizar el peso
         $solicitude->nombre_d = $request->nombre_d; // Actualizar el peso
         $solicitude->save();
@@ -664,7 +705,10 @@ class SolicitudeController extends Controller
 
             // Cambia el estado a 5 y guarda el cartero_entrega_id del request
             $solicitude->estado = 5;
-            $solicitude->cartero_recogida_id = $request->input('cartero_recogida_id');
+            $carteroId = $this->resolveCarteroId($request, $solicitude);
+            if ($carteroId !== null) {
+                $solicitude->cartero_recogida_id = $carteroId;
+            }
             $solicitude->recojo_observacion = $request->recojo_observacion; // Actualizar el peso
             $solicitude->fecha_recojo_c = now();
 
@@ -695,8 +739,9 @@ class SolicitudeController extends Controller
                 $solicitude->observacion = $request->input('observacion');
             }
 
-            if ($request->filled('cartero_recogida_id')) {
-                $solicitude->cartero_recogida_id = (int) $request->input('cartero_recogida_id');
+            $carteroId = $this->resolveCarteroId($request, $solicitude);
+            if ($carteroId !== null) {
+                $solicitude->cartero_recogida_id = $carteroId;
             }
 
             $solicitude->save();
@@ -800,7 +845,9 @@ class SolicitudeController extends Controller
             $solicitude->fecha_envio_regional = $request->fecha_envio_regional ?? now();
 
             // Prioridad: cartero logueado -> cartero enviado por payload -> cartero existente en solicitud.
-            $incomingCarteroId = $request->input('cartero_recogida_id');
+            $incomingCarteroId = $request->input('cartero_recogida_id')
+                ?? $request->input('cartero_entrega_id')
+                ?? $request->input('cartero_id');
             $actorCarteroId = $carteroAuthId
                 ?: (($incomingCarteroId !== null && $incomingCarteroId !== '') ? (int) $incomingCarteroId : null)
                 ?: ($solicitude->cartero_recogida_id ?: null);
@@ -849,7 +896,13 @@ class SolicitudeController extends Controller
     {
         try {
             $solicitude->estado = 9;
-            $solicitude->cartero_entrega_id = $request->cartero_entrega_id; // Asignar el cartero de entrega
+            $carteroId = $this->resolveCarteroId($request, $solicitude);
+            if ($carteroId !== null) {
+                $solicitude->cartero_entrega_id = $carteroId; // Asignar el cartero de entrega
+                if (($solicitude->tipo_correspondencia ?? null) === 'EMS' && empty($solicitude->cartero_recogida_id)) {
+                    $solicitude->cartero_recogida_id = $carteroId;
+                }
+            }
             $solicitude->save();
             Evento::create([
                 'accion' => 'En camino',
@@ -869,7 +922,10 @@ class SolicitudeController extends Controller
     public function RecibirPaquete(Request $request, Solicitude $solicitude)
     {
         $solicitude->estado = 10;
-        $solicitude->cartero_recogida_id = $request->input('cartero_recogida_id', $solicitude->cartero_recogida_id);
+        $carteroId = $this->resolveCarteroId($request, $solicitude);
+        if ($carteroId !== null) {
+            $solicitude->cartero_recogida_id = $carteroId;
+        }
         $solicitude->cartero_entrega_id = null;
         $solicitude->encargado_regional_id = $this->resolveEncargadoRegionalId($request, $solicitude);
         $solicitude->peso_r = $request->peso_r; // Actualizar el peso
