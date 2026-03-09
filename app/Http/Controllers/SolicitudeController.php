@@ -90,6 +90,43 @@ class SolicitudeController extends Controller
 
         return null;
     }
+
+    protected function normalizeGuia(?string $guia): ?string
+    {
+        if ($guia === null) {
+            return null;
+        }
+
+        $normalized = strtoupper(trim((string) $guia));
+
+        return $normalized === '' ? null : $normalized;
+    }
+
+    protected function guiaAlreadyExists(string $guia, ?int $exceptSolicitudeId = null): bool
+    {
+        $normalizedGuia = $this->normalizeGuia($guia);
+        if ($normalizedGuia === null) {
+            return false;
+        }
+
+        $query = Solicitude::query()
+            ->whereNotNull('guia')
+            ->whereRaw('UPPER(TRIM(guia)) = ?', [$normalizedGuia]);
+
+        if ($exceptSolicitudeId !== null) {
+            $query->where('id', '!=', $exceptSolicitudeId);
+        }
+
+        return $query->exists();
+    }
+
+    protected function guiaDuplicadaResponse(string $guia)
+    {
+        return response()->json([
+            'error' => 'La guia ya existe. No se permiten guias duplicadas.',
+            'guia' => $guia,
+        ], 422);
+    }
     public function index()
     {
         $solicitudes = Solicitude::with(['carteroRecogida', 'carteroEntrega', 'sucursale', 'tarifa', 'direccion', 'encargado', 'encargadoregional', 'transporte'])->get();
@@ -133,7 +170,7 @@ class SolicitudeController extends Controller
         $solicitude->direccion_id = $request->direccion_id ?? null;
 
         // Validar si el campo 'guia' tiene un valor, si no, generar la guÃ­a
-        $guia = $request->guia;
+        $guia = $this->normalizeGuia($request->guia);
         if (empty($guia)) {
             $guiaData = $this->buildGuiaData(
                 $request->input('sucursale_id'),
@@ -147,6 +184,10 @@ class SolicitudeController extends Controller
                     'error' => $guiaData['error'] ?? 'No se pudo generar la guia. Verifica sucursale_id.',
                 ], 422);
             }
+        }
+
+        if ($this->guiaAlreadyExists($guia)) {
+            return $this->guiaDuplicadaResponse($guia);
         }
         $solicitude->guia = $guia;
 
@@ -225,7 +266,18 @@ class SolicitudeController extends Controller
         $solicitude->cartero_entrega_id = $request->input('cartero_entrega_id', $solicitude->cartero_entrega_id);
         $solicitude->direccion_id = $request->input('direccion_id', $solicitude->direccion_id);
         $solicitude->encargado_id = $request->input('encargado_id', $solicitude->encargado_id);
-        $solicitude->guia = $request->input('guia', $solicitude->guia);
+        $guia = $this->normalizeGuia($request->input('guia', $solicitude->guia));
+        if (empty($guia)) {
+            return response()->json([
+                'error' => 'La guia es obligatoria.',
+            ], 422);
+        }
+
+        if ($this->guiaAlreadyExists($guia, (int) $solicitude->id)) {
+            return $this->guiaDuplicadaResponse($guia);
+        }
+
+        $solicitude->guia = $guia;
         $solicitude->peso_o = $request->input('peso_o', $solicitude->peso_o);
         $solicitude->peso_v = $request->input('peso_v', $solicitude->peso_v);
         $solicitude->remitente = $request->input('remitente', $solicitude->remitente);
@@ -410,23 +462,30 @@ class SolicitudeController extends Controller
     }
     protected function getLastCorrelativeBySucursal(int $sucursaleId): int
     {
-        $lastNumber = 0;
+        $maxCorrelative = 0;
 
         $rows = Solicitude::query()
             ->where('sucursale_id', $sucursaleId)
             ->whereNotNull('guia')
-            ->orderByDesc('id')
             ->select('guia')
             ->cursor();
 
         foreach ($rows as $row) {
-            if (preg_match('/(\d+)(?:[A-Z]+)?\s*$/', strtoupper((string) $row->guia), $matches)) {
-                $lastNumber = (int) $matches[1];
-                break;
+            $guia = $this->normalizeGuia((string) $row->guia);
+            if ($guia === null) {
+                continue;
+            }
+
+            // Solo toma el bloque final de hasta 5 digitos para correlativo.
+            if (preg_match('/(\d{1,5})\s*$/', $guia, $matches)) {
+                $current = (int) $matches[1];
+                if ($current > $maxCorrelative) {
+                    $maxCorrelative = $current;
+                }
             }
         }
 
-        return $lastNumber;
+        return $maxCorrelative;
     }
 
     protected function buildGuiaData($sucursaleId, $tarifaId = null, $reencaminamiento = null, $departamento = null): array
@@ -481,10 +540,20 @@ class SolicitudeController extends Controller
 
         // Secuencial por sucursal con 5 digitos al final
         $lastNumber = $this->getLastCorrelativeBySucursal($sucursaleId);
-        $newNumber = str_pad((string) ($lastNumber + 1), 5, '0', STR_PAD_LEFT);
-        $newGuia = "{$sucursalCode}{$sucursalOrigin}{$sucursalNumero}{$tarifaCode}{$newNumber}";
+        if ($lastNumber >= 99999) {
+            return ['error' => 'Se alcanzo el limite maximo del correlativo para la sucursal.'];
+        }
 
-        return ['guia' => $newGuia];
+        $maxAttempts = 99999 - $lastNumber;
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            $newNumber = str_pad((string) ($lastNumber + $attempt), 5, '0', STR_PAD_LEFT);
+            $newGuia = "{$sucursalCode}{$sucursalOrigin}{$sucursalNumero}{$tarifaCode}{$newNumber}";
+            if (!$this->guiaAlreadyExists($newGuia)) {
+                return ['guia' => $newGuia];
+            }
+        }
+
+        return ['error' => 'No se pudo generar una guia unica.'];
     }
 
     public function generateGuia(Request $request)
@@ -1043,7 +1112,17 @@ $solicitude->reencaminamiento = $request->reencaminamiento; // ✅ NUEVO
     $solicitude->peso_v = $request->peso_v;
     $solicitude->peso_o = $request->peso_v;
 
-    $solicitude->guia        = $request->guia;
+    $guia = $this->normalizeGuia($request->guia);
+    if (empty($guia)) {
+        return response()->json([
+            'error' => 'La guia es obligatoria.',
+        ], 422);
+    }
+    if ($this->guiaAlreadyExists($guia)) {
+        return $this->guiaDuplicadaResponse($guia);
+    }
+
+    $solicitude->guia        = $guia;
     $solicitude->ciudad      = $request->provincia ?? $request->ciudad;
     $solicitude->observacion = $request->observacion;
     $solicitude->estado      = 5;
@@ -1099,7 +1178,17 @@ public function storeEMS(Request $request)
 
     // Datos EMS
     $solicitude->tipo_correspondencia = 'EMS';
-    $solicitude->guia = $request->guia;
+    $guia = $this->normalizeGuia($request->guia);
+    if (empty($guia)) {
+        return response()->json([
+            'error' => 'La guia es obligatoria.',
+        ], 422);
+    }
+    if ($this->guiaAlreadyExists($guia)) {
+        return $this->guiaDuplicadaResponse($guia);
+    }
+
+    $solicitude->guia = $guia;
     $solicitude->ciudad = $request->provincia ?? $request->ciudad;
 
     // âœ… PESOS IGUALES
@@ -1299,7 +1388,17 @@ public function storeEntregadoManual(Request $request)
     $solicitude->estado           = 3;
     $solicitude->fecha_d          = $fecha_d;
 
-    $solicitude->guia             = $data['guia'];
+    $guia = $this->normalizeGuia($data['guia'] ?? null);
+    if (empty($guia)) {
+        return response()->json([
+            'error' => 'La guia es obligatoria.',
+        ], 422);
+    }
+    if ($this->guiaAlreadyExists($guia)) {
+        return $this->guiaDuplicadaResponse($guia);
+    }
+
+    $solicitude->guia             = $guia;
     $solicitude->peso_r           = $data['peso_r'] ?? null;
     $solicitude->remitente        = $data['remitente'];
     $solicitude->telefono         = $data['telefono'];
