@@ -14,7 +14,6 @@ use App\Http\Controllers\DireccioneController;
 use App\Http\Controllers\SolicitudeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardCarteroController;
-use App\Http\Controllers\RecojoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,5 +41,3 @@ Route::get('/solicitudes/buscar-por-codigo/{codigo}', [ApiController::class, 'so
 Route::put('/solicitudes/cambiar-estado', [ApiController::class, 'cambiarEstadoPorGuia']);
 Route::put('/solicitud/actualizar-estado', [ApiController::class, 'actualizarEstadoConFirma']);
 Route::put('/solicitudes/devuelto-almacen/{solicitude}', [SolicitudeController::class, 'markAsDevueltoAlmacen']);
-Route::post('/public/paquetes-contrato', [RecojoController::class, 'storePublic'])
-    ->name('api.public.paquetes-contrato.store');
