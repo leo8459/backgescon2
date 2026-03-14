@@ -273,6 +273,48 @@ class SolicitudeController extends Controller
         return response()->json($solicitudes);
     }
 
+    public function indexEncaminoRegionalCartero(Request $request)
+    {
+        $carteroId = Auth::guard('api_cartero')->id();
+        $scope = trim((string) $request->input('scope', 'encamino'));
+
+        $query = Solicitude::with([
+            'carteroRecogida',
+            'carteroEntrega',
+            'sucursale',
+            'tarifa',
+            'direccion',
+            'encargado',
+            'encargadoregional',
+            'transporte',
+        ]);
+
+        if ($scope === 'regional') {
+            $query->where('estado', 14)
+                ->where(function ($regionalQuery) use ($carteroId) {
+                    $regionalQuery
+                        ->where('cartero_entrega_id', $carteroId)
+                        ->orWhereNull('cartero_entrega_id');
+                });
+        } else {
+            if ($carteroId) {
+                $query->where('estado', 9)
+                    ->where('cartero_entrega_id', $carteroId);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+
+        $this->applyCarteroSearch($query, $request->input('search'));
+
+        $solicitudes = $query
+            ->orderByDesc('fecha')
+            ->orderByDesc('id')
+            ->get();
+
+        return response()->json($solicitudes);
+    }
+
     public function indexRecogidosCartero(Request $request)
     {
         $cartero = Auth::guard('api_cartero')->user();
