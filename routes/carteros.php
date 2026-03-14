@@ -30,6 +30,9 @@ Route::middleware(['auth:api_cartero'])->group(function () {
 
     // ✅ Solicitudes (PROTEGIDO)
     Route::apiResource('/solicitudes', SolicitudeController::class);
+    Route::get('/solicitudes1', [SolicitudeController::class, 'indexSolicitudesCartero']);
+    Route::get('/solicitudes3', [SolicitudeController::class, 'indexDarBajaCartero']);
+    Route::get('/solicitudes5', [SolicitudeController::class, 'indexRecogidosCartero']);
 
     // Acciones solicitudes
     Route::put('/solicitudesrecojo/{solicitude}', [SolicitudeController::class, 'markAsEnCamino']);

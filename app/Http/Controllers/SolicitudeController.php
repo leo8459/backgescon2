@@ -155,11 +155,177 @@ class SolicitudeController extends Controller
             'guia' => $guia,
         ], 422);
     }
+
+    protected function applyCarteroSearch($query, ?string $search): void
+    {
+        $search = trim((string) $search);
+        if ($search === '') {
+            return;
+        }
+
+        $like = '%' . $search . '%';
+
+        $query->where(function ($searchQuery) use ($like) {
+            $searchQuery
+                ->where('guia', 'like', $like)
+                ->orWhere('remitente', 'like', $like)
+                ->orWhere('telefono', 'like', $like)
+                ->orWhere('contenido', 'like', $like)
+                ->orWhere('destinatario', 'like', $like)
+                ->orWhere('telefono_d', 'like', $like)
+                ->orWhere('direccion_d', 'like', $like)
+                ->orWhere('ciudad', 'like', $like)
+                ->orWhere('zona_d', 'like', $like)
+                ->orWhere('reencaminamiento', 'like', $like)
+                ->orWhereHas('sucursale', function ($sucursaleQuery) use ($like) {
+                    $sucursaleQuery
+                        ->where('nombre', 'like', $like)
+                        ->orWhere('origen', 'like', $like)
+                        ->orWhere('sigla', 'like', $like);
+                })
+                ->orWhereHas('direccion', function ($direccionQuery) use ($like) {
+                    $direccionQuery
+                        ->where('direccion', 'like', $like)
+                        ->orWhere('direccion_especifica', 'like', $like)
+                        ->orWhere('direccion_especifica_d', 'like', $like)
+                        ->orWhere('zona', 'like', $like);
+                })
+                ->orWhereHas('tarifa', function ($tarifaQuery) use ($like) {
+                    $tarifaQuery
+                        ->where('departamento', 'like', $like)
+                        ->orWhere('servicio', 'like', $like);
+                });
+        });
+    }
+
     public function index()
     {
         $solicitudes = Solicitude::with(['carteroRecogida', 'carteroEntrega', 'sucursale', 'tarifa', 'direccion', 'encargado', 'encargadoregional', 'transporte'])->get();
         return response()->json($solicitudes);
     }
+
+    public function indexSolicitudesCartero(Request $request)
+    {
+        $cartero = Auth::guard('api_cartero')->user();
+        $departamento = $cartero->departamento_cartero ?? null;
+
+        $query = Solicitude::with([
+            'carteroRecogida',
+            'carteroEntrega',
+            'sucursale',
+            'tarifa',
+            'direccion',
+            'encargado',
+            'encargadoregional',
+            'transporte',
+        ])->where('estado', 1);
+
+        if (!empty($departamento)) {
+            $query->whereHas('sucursale', function ($sucursaleQuery) use ($departamento) {
+                $sucursaleQuery->where('origen', $departamento);
+            });
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+
+        if ($request->filled('sucursale_id')) {
+            $query->where('sucursale_id', $request->input('sucursale_id'));
+        }
+
+        $this->applyCarteroSearch($query, $request->input('search'));
+
+        $solicitudes = $query
+            ->orderByDesc('fecha')
+            ->get();
+
+        return response()->json($solicitudes);
+    }
+
+    public function indexDarBajaCartero(Request $request)
+    {
+        $carteroId = Auth::guard('api_cartero')->id();
+
+        $query = Solicitude::with([
+            'carteroRecogida',
+            'carteroEntrega',
+            'sucursale',
+            'tarifa',
+            'direccion',
+            'encargado',
+            'encargadoregional',
+            'transporte',
+        ]);
+
+        if ($carteroId) {
+            $query->where('cartero_entrega_id', $carteroId);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+
+        $query->whereNotIn('estado', [3, 4]);
+
+        $this->applyCarteroSearch($query, $request->input('search'));
+
+        $solicitudes = $query
+            ->orderByDesc('id')
+            ->get();
+
+        return response()->json($solicitudes);
+    }
+
+    public function indexRecogidosCartero(Request $request)
+    {
+        $cartero = Auth::guard('api_cartero')->user();
+        $departamento = $cartero->departamento_cartero ?? null;
+
+        $query = Solicitude::with([
+            'carteroRecogida',
+            'carteroEntrega',
+            'sucursale',
+            'tarifa',
+            'direccion',
+            'encargado',
+            'encargadoregional',
+            'transporte',
+        ]);
+
+        $query->where(function ($query) use ($departamento) {
+            if (!empty($departamento)) {
+                $query->where(function ($subQuery) use ($departamento) {
+                    $subQuery->where('estado', 5)
+                        ->whereHas('sucursale', function ($sucursaleQuery) use ($departamento) {
+                            $sucursaleQuery->where('origen', $departamento);
+                        });
+                })->orWhere(function ($subQuery) use ($departamento) {
+                    $subQuery->whereIn('estado', [10, 11, 13])
+                        ->where('reencaminamiento', $departamento);
+                })->orWhere(function ($subQuery) {
+                    $subQuery->where('estado', 5)
+                        ->whereRaw("UPPER(COALESCE(tipo_correspondencia, '')) = ?", ['EMS'])
+                        ->whereNull('sucursale_id')
+                        ->whereNull('tarifa_id');
+                });
+
+                return;
+            }
+
+            $query->where(function ($subQuery) {
+                $subQuery->where('estado', 5)
+                    ->whereRaw("UPPER(COALESCE(tipo_correspondencia, '')) = ?", ['EMS'])
+                    ->whereNull('sucursale_id')
+                    ->whereNull('tarifa_id');
+            });
+        });
+
+        $this->applyCarteroSearch($query, $request->input('search'));
+
+        $solicitudes = $query
+            ->orderByDesc('fecha_recojo_c')
+            ->get();
+
+        return response()->json($solicitudes);
+    }
+
     // ruta: GET /api/solicitudes/estado/{estado}
     public function solicitudesPorEstado($estado)
     {
