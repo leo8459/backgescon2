@@ -65,6 +65,39 @@ class EventoController extends Controller
         return $this->paginateForCartero($query, $request);
     }
 
+    public function indexEncargado(Request $request)
+    {
+        $search = trim((string) $request->input('search', ''));
+
+        $query = Evento::with(['cartero', 'sucursale', 'encargado']);
+
+        if ($search !== '') {
+            $like = '%' . $search . '%';
+            $query->where(function ($searchQuery) use ($like) {
+                $searchQuery
+                    ->where('codigo', 'like', $like)
+                    ->orWhere('accion', 'like', $like)
+                    ->orWhere('descripcion', 'like', $like)
+                    ->orWhere('fecha_hora', 'like', $like)
+                    ->orWhereHas('sucursale', function ($sucursaleQuery) use ($like) {
+                        $sucursaleQuery->where('nombre', 'like', $like);
+                    })
+                    ->orWhereHas('cartero', function ($carteroQuery) use ($like) {
+                        $carteroQuery->where('nombre', 'like', $like);
+                    })
+                    ->orWhereHas('encargado', function ($encargadoQuery) use ($like) {
+                        $encargadoQuery->where('nombre', 'like', $like);
+                    });
+            });
+        }
+
+        $query
+            ->orderByDesc('fecha_hora')
+            ->orderByDesc('id');
+
+        return $this->paginateForCartero($query, $request);
+    }
+
     /**
      * Store a newly created resource in storage.
      */

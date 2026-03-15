@@ -23,9 +23,17 @@ Route::middleware(['auth:api_encargado'])->group(function () {
     Route::apiResource('/solicitudes5', 'SolicitudeController')->parameters(['solicitudes5' => 'solicitude']);
     Route::get('/solicitudes-recogido', [EncargadoRecogidoListController::class, 'index']);
     Route::get('/solicitudes-encamino', [EncargadoRecogidoListController::class, 'indexEncamino']);
+    Route::get('/solicitudes-entregado', [EncargadoRecogidoListController::class, 'indexEntregado']);
+    Route::get('/solicitudes-verificado', [EncargadoRecogidoListController::class, 'indexVerificado']);
+    Route::get('/solicitudes-regional', [EncargadoRecogidoListController::class, 'indexRegional']);
+    Route::get('/solicitudes-recibido-regional', [EncargadoRecogidoListController::class, 'indexRecibidoRegional']);
+    Route::get('/solicitudes-verificar-devuelto', [EncargadoRecogidoListController::class, 'indexVerificarDevuelto']);
+    Route::get('/solicitudes-rechazado', [EncargadoRecogidoListController::class, 'indexRechazado']);
+    Route::get('/solicitudes-devuelto', [EncargadoRecogidoListController::class, 'indexDevuelto']);
     Route::apiResource('/encargados5', 'EncargadoController')->parameters(['encargados5' => 'encargado']);
     Route::apiResource('/sucursales5', 'SucursaleController')->parameters(['sucursales5' => 'sucursale']);
     Route::apiResource('/eventos5', 'EventoController');
+    Route::get('/eventos-encargado', [EventoController::class, 'indexEncargado']);
 
     Route::put('/solicitudesrecojo5/{solicitude}', 'SolicitudeController@markAsEnCamino');
     Route::put('/solicitudesentrega5/{solicitude}', 'SolicitudeController@markAsEntregado');
