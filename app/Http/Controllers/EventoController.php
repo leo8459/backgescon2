@@ -9,6 +9,20 @@ use Illuminate\Support\Facades\Auth;
 
 class EventoController extends Controller
 {
+    protected function paginateForCartero($query, Request $request, int $defaultPerPage = 10)
+    {
+        $perPage = (int) $request->input('per_page', $defaultPerPage);
+        if ($perPage <= 0) {
+            $perPage = $defaultPerPage;
+        }
+
+        $perPage = min($perPage, 100);
+
+        return response()->json(
+            $query->paginate($perPage)->appends($request->query())
+        );
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -17,6 +31,46 @@ class EventoController extends Controller
         $eventos = Evento::with(['cartero', 'sucursale', 'encargado'])->get();
         return response()->json($eventos);
 
+    }
+
+    public function indexCartero(Request $request)
+    {
+        $carteroId = Auth::guard('api_cartero')->id();
+        $search = trim((string) $request->input('search', ''));
+
+        $query = Evento::with(['cartero', 'sucursale', 'encargado']);
+
+        if ($carteroId) {
+            $query->where('cartero_id', $carteroId);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+
+        if ($search !== '') {
+            $like = '%' . $search . '%';
+            $query->where(function ($searchQuery) use ($like) {
+                $searchQuery
+                    ->where('codigo', 'like', $like)
+                    ->orWhere('accion', 'like', $like)
+                    ->orWhere('descripcion', 'like', $like)
+                    ->orWhere('fecha_hora', 'like', $like)
+                    ->orWhereHas('sucursale', function ($sucursaleQuery) use ($like) {
+                        $sucursaleQuery->where('nombre', 'like', $like);
+                    })
+                    ->orWhereHas('cartero', function ($carteroQuery) use ($like) {
+                        $carteroQuery->where('nombre', 'like', $like);
+                    })
+                    ->orWhereHas('encargado', function ($encargadoQuery) use ($like) {
+                        $encargadoQuery->where('nombre', 'like', $like);
+                    });
+            });
+        }
+
+        $query
+            ->orderByDesc('fecha_hora')
+            ->orderByDesc('id');
+
+        return $this->paginateForCartero($query, $request);
     }
 
     /**

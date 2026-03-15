@@ -198,6 +198,20 @@ class SolicitudeController extends Controller
         });
     }
 
+    protected function paginateForCartero($query, Request $request, int $defaultPerPage = 10)
+    {
+        $perPage = (int) $request->input('per_page', $defaultPerPage);
+        if ($perPage <= 0) {
+            $perPage = $defaultPerPage;
+        }
+
+        $perPage = min($perPage, 100);
+
+        return response()->json(
+            $query->paginate($perPage)->appends($request->query())
+        );
+    }
+
     public function index()
     {
         $solicitudes = Solicitude::with(['carteroRecogida', 'carteroEntrega', 'sucursale', 'tarifa', 'direccion', 'encargado', 'encargadoregional', 'transporte'])->get();
@@ -234,11 +248,120 @@ class SolicitudeController extends Controller
 
         $this->applyCarteroSearch($query, $request->input('search'));
 
-        $solicitudes = $query
-            ->orderByDesc('fecha')
-            ->get();
+        $query->orderByDesc('fecha');
 
-        return response()->json($solicitudes);
+        return $this->paginateForCartero($query, $request);
+    }
+
+    public function indexEncaminoCartero(Request $request)
+    {
+        $carteroId = Auth::guard('api_cartero')->id();
+        $scope = trim((string) $request->input('scope', 'encamino'));
+
+        $query = Solicitude::with([
+            'carteroRecogida',
+            'carteroEntrega',
+            'sucursale',
+            'tarifa',
+            'direccion',
+            'encargado',
+            'encargadoregional',
+            'transporte',
+        ]);
+
+        if ($scope === 'provincia') {
+            $query->where('estado', 14)
+                ->where('cartero_entrega_id', $carteroId);
+        } else {
+            if ($carteroId) {
+                $query->where('estado', 2)
+                    ->where('cartero_entrega_id', $carteroId);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+
+        $this->applyCarteroSearch($query, $request->input('search'));
+
+        $query
+            ->orderByDesc('fecha_recojo_c')
+            ->orderByDesc('id');
+
+        return $this->paginateForCartero($query, $request);
+    }
+
+    public function indexEntregadosCartero(Request $request)
+    {
+        $carteroId = Auth::guard('api_cartero')->id();
+
+        $query = Solicitude::with([
+            'carteroRecogida',
+            'carteroEntrega',
+            'sucursale',
+            'tarifa',
+            'direccion',
+            'encargado',
+            'encargadoregional',
+            'transporte',
+        ]);
+
+        if ($carteroId) {
+            $query->where('cartero_entrega_id', $carteroId);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+
+        $query->whereIn('estado', [3, 4, 7, 10]);
+
+        $this->applyCarteroSearch($query, $request->input('search'));
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $startDate = trim((string) $request->input('start_date'));
+            $endDate = trim((string) $request->input('end_date'));
+
+            $query->where(function ($dateQuery) use ($startDate, $endDate) {
+                $dateQuery
+                    ->whereDate('fecha_d', '>=', $startDate)
+                    ->whereDate('fecha_d', '<=', $endDate)
+                    ->orWhereDate('fecha_devolucion', '>=', $startDate)
+                    ->whereDate('fecha_devolucion', '<=', $endDate);
+            });
+        }
+
+        $query
+            ->orderByDesc('fecha_devolucion')
+            ->orderByDesc('fecha_d')
+            ->orderByDesc('id');
+
+        return $this->paginateForCartero($query, $request);
+    }
+
+    public function indexBitacoraCartero(Request $request)
+    {
+        $carteroId = Auth::guard('api_cartero')->id();
+
+        $query = Solicitude::with([
+            'carteroRecogida',
+            'carteroEntrega',
+            'sucursale',
+            'tarifa',
+            'direccion',
+            'encargado',
+            'encargadoregional',
+            'transporte',
+        ]);
+
+        if ($carteroId) {
+            $query->where('cartero_entrega_id', $carteroId);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+
+        $this->applyCarteroSearch($query, $request->input('search'));
+
+        $query->orderByDesc('id');
+
+        return $this->paginateForCartero($query, $request);
     }
 
     public function indexDarBajaCartero(Request $request)
@@ -266,11 +389,170 @@ class SolicitudeController extends Controller
 
         $this->applyCarteroSearch($query, $request->input('search'));
 
-        $solicitudes = $query
-            ->orderByDesc('id')
-            ->get();
+        $query->orderByDesc('id');
 
-        return response()->json($solicitudes);
+        return $this->paginateForCartero($query, $request);
+    }
+
+    public function indexGenerarDespachoCartero(Request $request)
+    {
+        $cartero = Auth::guard('api_cartero')->user();
+        $departamento = $cartero->departamento_cartero ?? null;
+
+        $query = Solicitude::with([
+            'carteroRecogida',
+            'carteroEntrega',
+            'sucursale',
+            'tarifa',
+            'direccion',
+            'encargado',
+            'encargadoregional',
+            'transporte',
+        ]);
+
+        $query->where(function ($query) use ($departamento) {
+            if (!empty($departamento)) {
+                $query->where(function ($subQuery) use ($departamento) {
+                    $subQuery->where('estado', 5)
+                        ->whereHas('sucursale', function ($sucursaleQuery) use ($departamento) {
+                            $sucursaleQuery->where('origen', $departamento);
+                        });
+                })->orWhere(function ($subQuery) use ($departamento) {
+                    $subQuery->whereIn('estado', [10, 11, 13])
+                        ->where('reencaminamiento', $departamento);
+                })->orWhere(function ($subQuery) {
+                    $subQuery->where('estado', 5)
+                        ->whereRaw("UPPER(COALESCE(tipo_correspondencia, '')) = ?", ['EMS'])
+                        ->whereNull('sucursale_id')
+                        ->whereNull('tarifa_id');
+                });
+
+                return;
+            }
+
+            $query->where(function ($subQuery) {
+                $subQuery->where('estado', 5)
+                    ->whereRaw("UPPER(COALESCE(tipo_correspondencia, '')) = ?", ['EMS'])
+                    ->whereNull('sucursale_id')
+                    ->whereNull('tarifa_id');
+            });
+        });
+
+        $this->applyCarteroSearch($query, $request->input('search'));
+
+        $query
+            ->orderByDesc('fecha_recojo_c')
+            ->orderByDesc('id');
+
+        return $this->paginateForCartero($query, $request);
+    }
+
+    public function indexRecibirRegionalCartero(Request $request)
+    {
+        $cartero = Auth::guard('api_cartero')->user();
+        $departamento = $cartero->departamento_cartero ?? $cartero->departamento ?? null;
+
+        $query = Solicitude::with([
+            'carteroRecogida',
+            'carteroEntrega',
+            'sucursale',
+            'tarifa',
+            'direccion',
+            'encargado',
+            'encargadoregional',
+            'transporte',
+        ])->whereIn('estado', [8, 12]);
+
+        if (!empty($departamento)) {
+            $query->where(function ($subQuery) use ($departamento) {
+                $subQuery
+                    ->where('reencaminamiento', $departamento)
+                    ->orWhereHas('tarifa', function ($tarifaQuery) use ($departamento) {
+                        $tarifaQuery->where('departamento', $departamento);
+                    });
+            });
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+
+        $this->applyCarteroSearch($query, $request->input('search'));
+
+        $query
+            ->orderByDesc('fecha_envio_regional')
+            ->orderByDesc('id');
+
+        return $this->paginateForCartero($query, $request);
+    }
+
+    public function indexRecogidoRegionalCartero(Request $request)
+    {
+        $cartero = Auth::guard('api_cartero')->user();
+        $departamento = $cartero->departamento_cartero ?? null;
+
+        $query = Solicitude::with([
+            'carteroRecogida',
+            'carteroEntrega',
+            'sucursale',
+            'tarifa',
+            'direccion',
+            'encargado',
+            'encargadoregional',
+            'transporte',
+        ])->where('estado', 10);
+
+        if (!empty($departamento)) {
+            $query->where(function ($subQuery) use ($departamento) {
+                $subQuery
+                    ->where('reencaminamiento', $departamento)
+                    ->orWhereHas('tarifa', function ($tarifaQuery) use ($departamento) {
+                        $tarifaQuery->where('departamento', $departamento);
+                    });
+            });
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+
+        $this->applyCarteroSearch($query, $request->input('search'));
+
+        $query
+            ->orderByDesc('fecha_envio_regional')
+            ->orderByDesc('id');
+
+        return $this->paginateForCartero($query, $request);
+    }
+
+    public function indexDevolucionCartero(Request $request)
+    {
+        $carteroId = Auth::guard('api_cartero')->id();
+
+        $query = Solicitude::with([
+            'carteroRecogida',
+            'carteroEntrega',
+            'sucursale',
+            'tarifa',
+            'direccion',
+            'encargado',
+            'encargadoregional',
+            'transporte',
+        ])->whereIn('estado', [6, 13]);
+
+        if ($carteroId) {
+            $query->where('cartero_entrega_id', $carteroId);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+
+        if ($request->filled('sucursale_id')) {
+            $query->where('sucursale_id', $request->input('sucursale_id'));
+        }
+
+        $this->applyCarteroSearch($query, $request->input('search'));
+
+        $query
+            ->orderByDesc('fecha_recojo_c')
+            ->orderByDesc('id');
+
+        return $this->paginateForCartero($query, $request);
     }
 
     public function indexEncaminoRegionalCartero(Request $request)
@@ -307,12 +589,11 @@ class SolicitudeController extends Controller
 
         $this->applyCarteroSearch($query, $request->input('search'));
 
-        $solicitudes = $query
+        $query
             ->orderByDesc('fecha')
-            ->orderByDesc('id')
-            ->get();
+            ->orderByDesc('id');
 
-        return response()->json($solicitudes);
+        return $this->paginateForCartero($query, $request);
     }
 
     public function indexRecogidosCartero(Request $request)
@@ -361,11 +642,9 @@ class SolicitudeController extends Controller
 
         $this->applyCarteroSearch($query, $request->input('search'));
 
-        $solicitudes = $query
-            ->orderByDesc('fecha_recojo_c')
-            ->get();
+        $query->orderByDesc('fecha_recojo_c');
 
-        return response()->json($solicitudes);
+        return $this->paginateForCartero($query, $request);
     }
 
     // ruta: GET /api/solicitudes/estado/{estado}

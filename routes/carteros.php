@@ -23,6 +23,7 @@ Route::middleware(['auth:api_cartero'])->group(function () {
     Route::apiResource('/tarifas', TarifaController::class);
     Route::apiResource('/encargados', EncargadoController::class);
     Route::apiResource('/eventos', EventoController::class);
+    Route::get('/eventos1', [EventoController::class, 'indexCartero']);
     Route::apiResource('/sucursales', SucursaleController::class);
 
     Route::apiResource('/direcciones', DireccioneController::class)
@@ -31,8 +32,15 @@ Route::middleware(['auth:api_cartero'])->group(function () {
     // ✅ Solicitudes (PROTEGIDO)
     Route::apiResource('/solicitudes', SolicitudeController::class);
     Route::get('/solicitudes1', [SolicitudeController::class, 'indexSolicitudesCartero']);
+    Route::get('/solicitudes2', [SolicitudeController::class, 'indexEncaminoCartero']);
+    Route::get('/solicitudes4', [SolicitudeController::class, 'indexEntregadosCartero']);
+    Route::get('/solicitudes6', [SolicitudeController::class, 'indexBitacoraCartero']);
     Route::get('/solicitudes3', [SolicitudeController::class, 'indexDarBajaCartero']);
+    Route::get('/solicitudes7', [SolicitudeController::class, 'indexGenerarDespachoCartero']);
+    Route::get('/solicitudes8', [SolicitudeController::class, 'indexRecibirRegionalCartero']);
     Route::get('/solicitudes9', [SolicitudeController::class, 'indexEncaminoRegionalCartero']);
+    Route::get('/solicitudes10', [SolicitudeController::class, 'indexRecogidoRegionalCartero']);
+    Route::get('/solicitudes11', [SolicitudeController::class, 'indexDevolucionCartero']);
     Route::get('/solicitudes5', [SolicitudeController::class, 'indexRecogidosCartero']);
 
     // Acciones solicitudes
