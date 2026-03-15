@@ -218,6 +218,85 @@ class SolicitudeController extends Controller
         return response()->json($solicitudes);
     }
 
+    public function searchAnyForCartero(Request $request)
+    {
+        $search = preg_replace('/\s+/', '', trim((string) $request->query('search', '')));
+
+        if ($search === '') {
+            return response()->json([
+                'message' => 'El parametro search es obligatorio.',
+            ], 422);
+        }
+
+        $query = Solicitude::with([
+            'carteroRecogida',
+            'carteroEntrega',
+            'sucursale',
+            'tarifa',
+            'direccion',
+            'encargado',
+            'encargadoregional',
+            'transporte',
+        ])->orderByDesc('id');
+
+        $searchLower = mb_strtolower($search, 'UTF-8');
+
+        if (ctype_digit($search)) {
+            $query->where(function ($builder) use ($search, $searchLower) {
+                $builder->where('id', (int) $search)
+                    ->orWhereRaw('LOWER(guia) = ?', [$searchLower]);
+            });
+        } else {
+            $query->whereRaw('LOWER(guia) = ?', [$searchLower]);
+        }
+
+        $solicitude = $query->first();
+
+        if (!$solicitude) {
+            return response()->json(null, 404);
+        }
+
+        return response()->json($solicitude);
+    }
+
+    public function assignAnyStateFromSearch(Request $request, Solicitude $solicitude)
+    {
+        $carteroId = $this->resolveCarteroId($request, $solicitude);
+
+        if ($carteroId === null) {
+            return response()->json([
+                'message' => 'No se pudo resolver el cartero para la asignacion.',
+            ], 422);
+        }
+
+        $solicitude->estado = 2;
+        $solicitude->cartero_entrega_id = $carteroId;
+
+        if (($solicitude->tipo_correspondencia ?? null) === 'EMS' && empty($solicitude->cartero_recogida_id)) {
+            $solicitude->cartero_recogida_id = $carteroId;
+        }
+
+        if ($request->filled('peso_v')) {
+            $solicitude->peso_v = $request->input('peso_v');
+        }
+
+        if ($request->filled('nombre_d')) {
+            $solicitude->nombre_d = $request->input('nombre_d');
+        }
+
+        $solicitude->save();
+
+        Evento::create([
+            'accion' => 'En camino',
+            'cartero_id' => $solicitude->cartero_entrega_id ?? $solicitude->cartero_recogida_id,
+            'descripcion' => 'Asignacion de cartero y peso desde busqueda',
+            'codigo' => $solicitude->guia,
+            'fecha_hora' => now(),
+        ]);
+
+        return response()->json($solicitude);
+    }
+
     public function indexSolicitudesCartero(Request $request)
     {
         $cartero = Auth::guard('api_cartero')->user();

@@ -31,6 +31,7 @@ Route::middleware(['auth:api_cartero'])->group(function () {
 
     // ✅ Solicitudes (PROTEGIDO)
     Route::apiResource('/solicitudes', SolicitudeController::class);
+    Route::get('/solicitudes-busqueda', [SolicitudeController::class, 'searchAnyForCartero']);
     Route::get('/solicitudes1', [SolicitudeController::class, 'indexSolicitudesCartero']);
     Route::get('/solicitudes2', [SolicitudeController::class, 'indexEncaminoCartero']);
     Route::get('/solicitudes4', [SolicitudeController::class, 'indexEntregadosCartero']);
@@ -46,6 +47,7 @@ Route::middleware(['auth:api_cartero'])->group(function () {
     // Acciones solicitudes
     Route::put('/solicitudesrecojo/{solicitude}', [SolicitudeController::class, 'markAsEnCamino']);
     Route::put('/solicitudesentrega/{solicitude}', [SolicitudeController::class, 'markAsEntregado']);
+    Route::put('/solicitudesentrega-busqueda/{solicitude}', [SolicitudeController::class, 'assignAnyStateFromSearch']);
     Route::put('/marcarrecogido/{solicitude}', [SolicitudeController::class, 'marcarRecogido']);
     Route::put('/devueltoalmacen/{solicitude}', [SolicitudeController::class, 'markAsDevueltoAlmacen']);
     Route::put('/rechazado/{solicitude}', [SolicitudeController::class, 'Rechazado']);

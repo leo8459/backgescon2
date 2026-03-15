@@ -12,6 +12,7 @@ use App\Http\Controllers\DireccioneController;
 use App\Http\Controllers\SolicitudeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardCarteroController;
+use App\Http\Controllers\EncargadoRecogidoListController;
 Route::post('/login', 'UserController@login'); // Login de Cartero
 
 Route::middleware(['auth:api_encargado'])->group(function () {
@@ -20,6 +21,8 @@ Route::middleware(['auth:api_encargado'])->group(function () {
     Route::apiResource('/empresas5', 'EmpresaController')->parameters(['empresas5' => 'empresa']);
     Route::apiResource('/tarifas5', 'TarifaController')->parameters(['tarifas5' => 'tarifa']);
     Route::apiResource('/solicitudes5', 'SolicitudeController')->parameters(['solicitudes5' => 'solicitude']);
+    Route::get('/solicitudes-recogido', [EncargadoRecogidoListController::class, 'index']);
+    Route::get('/solicitudes-encamino', [EncargadoRecogidoListController::class, 'indexEncamino']);
     Route::apiResource('/encargados5', 'EncargadoController')->parameters(['encargados5' => 'encargado']);
     Route::apiResource('/sucursales5', 'SucursaleController')->parameters(['sucursales5' => 'sucursale']);
     Route::apiResource('/eventos5', 'EventoController');

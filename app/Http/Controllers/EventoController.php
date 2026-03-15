@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Evento;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class EventoController extends Controller
 {
@@ -35,16 +34,9 @@ class EventoController extends Controller
 
     public function indexCartero(Request $request)
     {
-        $carteroId = Auth::guard('api_cartero')->id();
         $search = trim((string) $request->input('search', ''));
 
         $query = Evento::with(['cartero', 'sucursale', 'encargado']);
-
-        if ($carteroId) {
-            $query->where('cartero_id', $carteroId);
-        } else {
-            $query->whereRaw('1 = 0');
-        }
 
         if ($search !== '') {
             $like = '%' . $search . '%';
