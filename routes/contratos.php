@@ -12,6 +12,7 @@ use App\Http\Controllers\DireccioneController;
 use App\Http\Controllers\SolicitudeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardCarteroController;
+use App\Http\Controllers\ContratoVerificadoListController;
 Route::post('/login', 'UserController@login'); // Login de Cartero
 
 Route::middleware(['auth:api_contratos'])->group(function () {
@@ -20,6 +21,7 @@ Route::middleware(['auth:api_contratos'])->group(function () {
     Route::apiResource('/empresas4', 'EmpresaController')->parameters(['empresas4' => 'empresa']);
     Route::apiResource('/tarifas4', 'TarifaController')->parameters(['tarifas4' => 'tarifa']);
     Route::apiResource('/solicitudes4', 'SolicitudeController')->parameters(['solicitudes4' => 'solicitude']);
+    Route::get('/solicitudes-verificado', [ContratoVerificadoListController::class, 'index']);
     Route::apiResource('/encargados4', 'EncargadoController')->parameters(['encargados4' => 'encargado']);
     Route::apiResource('/sucursales4', 'SucursaleController')->parameters(['sucursales4' => 'sucursale']);
     Route::apiResource('/eventos4', 'EventoController');
