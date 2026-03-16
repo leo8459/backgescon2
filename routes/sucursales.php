@@ -78,7 +78,11 @@ Route::middleware(['auth:api_sucursal'])->group(function () {
 
     // ✅ Registro manual
     Route::post('/solicitudes/manual', [SolicitudeController::class, 'storeManual']);
-    Route::post('solicitudes/ems', 'SolicitudeController@storeEMS');
+    Route::post('solicitudes/ems', function () {
+        return response()->json([
+            'message' => 'Registro EMS manual deshabilitado para modulo sucursal. Usa el flujo regular de solicitudes.',
+        ], 403);
+    });
 });
 Route::post('/login2', 'SucursaleController@login2');
 Route::post('/sucursales/change-password', 'SucursaleController@changePassword');

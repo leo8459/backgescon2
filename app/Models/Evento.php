@@ -9,7 +9,7 @@ class Evento extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['accion', 'descripcion', 'codigo', 'fecha_hora', 'sucursale_id', 'encargado_id', 'cartero_id'];
+    protected $fillable = ['accion', 'descripcion', 'codigo', 'fecha_hora', 'sucursale_id', 'encargado_id', 'cartero_id', 'usercartero'];
      // Relación con Sucursal
      public function sucursale()
      {

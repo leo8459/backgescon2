@@ -109,6 +109,7 @@ class EventoController extends Controller
           $evento->descripcion = $request->descripcion;
           $evento->codigo = $request->codigo;
           $evento->fecha_hora = $request->fecha_hora;
+          $evento->usercartero = $request->usercartero;
 
       
           $evento->save();
@@ -135,6 +136,7 @@ class EventoController extends Controller
           $evento->descripcion = $request->descripcion;
           $evento->codigo = $request->codigo;
           $evento->fecha_hora = $request->fecha_hora;
+          $evento->usercartero = $request->usercartero;
 
       
           $evento->save();

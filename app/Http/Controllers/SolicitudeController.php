@@ -24,6 +24,9 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+
+use Illuminate\Support\Facades\Http;
 
 class SolicitudeController extends Controller
 {
@@ -748,99 +751,102 @@ class SolicitudeController extends Controller
 
 
     public function store(Request $request)
-    {
-        $this->logImagenRequest($request, 'SolicitudeController@store');
+{
+    $this->logImagenRequest($request, 'SolicitudeController@store');
 
-        // Extraer y optimizar imagen en base64 (si existe)
-        $optimizedImage = $this->optimizeImage($request->input('imagen'));
+    // Extraer y optimizar imagen en base64 (si existe)
+    $optimizedImage = $this->optimizeImage($request->input('imagen'));
 
-        // Crear una nueva instancia de Solicitude
-        $solicitude = new Solicitude();
-        $solicitude->cartero_recogida_id = $request->cartero_recogida_id ?? null;
-        $solicitude->cartero_entrega_id = $request->cartero_entrega_id ?? null;
-        $solicitude->encargado_id = $request->encargado_id ?? null;
-        $solicitude->sucursale_id = $request->sucursale_id;
-        $solicitude->tarifa_id = $request->tarifa_id ?? null;
-        $solicitude->direccion_id = $request->direccion_id ?? null;
+    // Crear una nueva instancia de Solicitude
+    $solicitude = new Solicitude();
+    $solicitude->cartero_recogida_id = $request->cartero_recogida_id ?? null;
+    $solicitude->cartero_entrega_id = $request->cartero_entrega_id ?? null;
+    $solicitude->encargado_id = $request->encargado_id ?? null;
+    $solicitude->sucursale_id = $request->sucursale_id;
+    $solicitude->tarifa_id = $request->tarifa_id ?? null;
+    $solicitude->direccion_id = $request->direccion_id ?? null;
 
-        // Validar si el campo 'guia' tiene un valor, si no, generar la guÃ­a
-        $guia = $this->normalizeGuia($request->guia);
+    // Validar si el campo 'guia' tiene un valor, si no, generar la guía
+    $guia = $this->normalizeGuia($request->guia);
+    if (empty($guia)) {
+        $guiaData = $this->buildGuiaData(
+            $request->input('sucursale_id'),
+            $request->input('tarifa_id'),
+            $request->input('reencaminamiento')
+        );
+        $guia = $guiaData['guia'] ?? null;
+
         if (empty($guia)) {
-            $guiaData = $this->buildGuiaData(
-                $request->input('sucursale_id'),
-                $request->input('tarifa_id'),
-                $request->input('reencaminamiento')
-            );
-            $guia = $guiaData['guia'] ?? null;
-
-            if (empty($guia)) {
-                return response()->json([
-                    'error' => $guiaData['error'] ?? 'No se pudo generar la guia. Verifica sucursale_id.',
-                ], 422);
-            }
+            return response()->json([
+                'error' => $guiaData['error'] ?? 'No se pudo generar la guia. Verifica sucursale_id.',
+            ], 422);
         }
-
-        if ($this->guiaAlreadyExists($guia)) {
-            return $this->guiaDuplicadaResponse($guia);
-        }
-        $solicitude->guia = $guia;
-
-        $solicitude->peso_o = $request->peso_o;
-        $solicitude->peso_v = $request->peso_v;
-        $solicitude->remitente = $request->remitente;
-        $solicitude->telefono = $request->telefono;
-        $solicitude->contenido = $request->contenido;
-        $solicitude->fecha = $request->fecha;
-        $solicitude->firma_o = $request->firma_o;
-        $solicitude->destinatario = $request->destinatario;
-        $solicitude->telefono_d = $request->telefono_d;
-        $solicitude->direccion_d = $request->direccion_d;
-        $solicitude->direccion_especifica_d = $request->direccion_especifica_d;
-        $solicitude->ciudad = $request->ciudad;
-        $solicitude->firma_d = $request->firma_d;
-        $solicitude->nombre_d = $request->nombre_d;
-        $solicitude->fecha_d = $request->fecha_d;
-        $solicitude->fecha_recojo_c = $request->fecha_recojo_c;
-        $solicitude->fecha_devolucion = $request->fecha_devolucion;
-        $solicitude->estado = $request->estado ?? 1;
-        $solicitude->observacion = $request->observacion;
-        $solicitude->zona_d = $request->zona_d;
-        $solicitude->justificacion = $request->justificacion;
-        $solicitude->imagen_justificacion = $request->imagen_justificacion;
-        $solicitude->encargado_regional_id = $this->resolveEncargadoRegionalId($request);
-
-        // Asignar la imagen optimizada en formato WebP al modelo
-        $solicitude->imagen = $optimizedImage;
-        $solicitude->imagen_devolucion = $request->imagen_devolucion;
-        $solicitude->peso_r = $request->peso_r;
-
-        // Generar el cÃ³digo de barras para la guÃ­a
-        $generator = new BarcodeGeneratorPNG();
-        $barcode = $generator->getBarcode($solicitude->guia, $generator::TYPE_CODE_128);
-        $solicitude->codigo_barras = base64_encode($barcode);
-        $solicitude->fecha_envio_regional = $request->fecha_envio_regional;
-        $solicitude->reencaminamiento = $request->reencaminamiento;
-
-        // Guardar la solicitud en la base de datos
-        $solicitude->save();
-
-        // Registrar el evento usando el modelo Evento
-        Evento::create([
-            'accion' => 'Solicitud',
-            'sucursale_id' => $solicitude->sucursale_id,
-            'descripcion' => 'Solicitud de Recojo de Paquetes',
-            'codigo' => $solicitude->guia,
-            'fecha_hora' => now(),
-        ]);
-
-        // Cargar la relaciÃ³n de sucursale antes de devolver la respuesta
-        $solicitude->load('sucursale');
-        $solicitude->load('direccion');
-        $solicitude->load('tarifa');
-
-        // Devolver la respuesta con la solicitud guardada, incluyendo la relaciÃ³n cargada
-        return $solicitude;
     }
+
+    if ($this->guiaAlreadyExists($guia)) {
+        return $this->guiaDuplicadaResponse($guia);
+    }
+
+    $solicitude->guia = $guia;
+
+    $solicitude->peso_o = $request->peso_o;
+    $solicitude->peso_v = $request->peso_v;
+    $solicitude->remitente = $request->remitente;
+    $solicitude->telefono = $request->telefono;
+    $solicitude->contenido = $request->contenido;
+    $solicitude->fecha = $request->fecha;
+    $solicitude->firma_o = $request->firma_o;
+    $solicitude->destinatario = $request->destinatario;
+    $solicitude->telefono_d = $request->telefono_d;
+    $solicitude->direccion_d = $request->direccion_d;
+    $solicitude->direccion_especifica_d = $request->direccion_especifica_d;
+    $solicitude->ciudad = $request->ciudad;
+    $solicitude->firma_d = $request->firma_d;
+    $solicitude->nombre_d = $request->nombre_d;
+    $solicitude->fecha_d = $request->fecha_d;
+    $solicitude->fecha_recojo_c = $request->fecha_recojo_c;
+    $solicitude->fecha_devolucion = $request->fecha_devolucion;
+    $solicitude->estado = $request->estado ?? 1;
+    $solicitude->observacion = $request->observacion;
+    $solicitude->zona_d = $request->zona_d;
+    $solicitude->justificacion = $request->justificacion;
+    $solicitude->imagen_justificacion = $request->imagen_justificacion;
+    $solicitude->encargado_regional_id = $this->resolveEncargadoRegionalId($request);
+
+    // Asignar la imagen optimizada en formato WebP al modelo
+    $solicitude->imagen = $optimizedImage;
+    $solicitude->imagen_devolucion = $request->imagen_devolucion;
+    $solicitude->peso_r = $request->peso_r;
+
+    // Generar el código de barras para la guía
+    $generator = new BarcodeGeneratorPNG();
+    $barcode = $generator->getBarcode($solicitude->guia, $generator::TYPE_CODE_128);
+    $solicitude->codigo_barras = base64_encode($barcode);
+    $solicitude->fecha_envio_regional = $request->fecha_envio_regional;
+    $solicitude->reencaminamiento = $request->reencaminamiento;
+
+    // Guardar la solicitud en la base de datos local
+    $solicitude->save();
+
+    // Registrar evento
+    Evento::create([
+        'accion' => 'Solicitud',
+        'sucursale_id' => $solicitude->sucursale_id,
+        'descripcion' => 'Solicitud de Recojo de Paquetes',
+        'codigo' => $solicitude->guia,
+        'fecha_hora' => now(),
+    ]);
+
+    // Enviar al otro backend
+    $this->enviarAOtroBackend($solicitude);
+
+    // Cargar relaciones
+    $solicitude->load('sucursale');
+    $solicitude->load('direccion');
+    $solicitude->load('tarifa');
+
+    return $solicitude;
+}
 
 
     public function show(Solicitude $solicitude)
@@ -1054,13 +1060,18 @@ class SolicitudeController extends Controller
         }
         return response()->json($direcciones);
     }
-    protected function getLastCorrelativeBySucursal(int $sucursaleId): int
+    protected function getLastCorrelativeByContractCode(string $contractCode): int
     {
         $maxCorrelative = 0;
 
+        $contractCode = trim((string) $contractCode);
+        if ($contractCode === '') {
+            return 0;
+        }
+
         $rows = Solicitude::query()
-            ->where('sucursale_id', $sucursaleId)
             ->whereNotNull('guia')
+            ->whereRaw('UPPER(TRIM(guia)) LIKE ?', ["C{$contractCode}A%BO"])
             ->select('guia')
             ->cursor();
 
@@ -1070,16 +1081,231 @@ class SolicitudeController extends Controller
                 continue;
             }
 
-            // Solo toma el bloque final de hasta 5 digitos para correlativo.
-            if (preg_match('/(\d{1,5})\s*$/', $guia, $matches)) {
-                $current = (int) $matches[1];
-                if ($current > $maxCorrelative) {
-                    $maxCorrelative = $current;
-                }
+            $current = $this->extractCorrelativeFromGuia($guia, $contractCode);
+            if ($current <= 0) {
+                continue;
+            }
+
+            if ($current > $maxCorrelative) {
+                $maxCorrelative = $current;
             }
         }
 
         return $maxCorrelative;
+    }
+
+    protected function extractCorrelativeFromGuia(?string $guia, ?string $expectedContractCode = null): int
+    {
+        $guia = $this->normalizeGuia($guia);
+        if ($guia === null) {
+            return 0;
+        }
+
+        if (preg_match('/^C(\d{4})A(\d{1,5})BO$/', $guia, $matches)) {
+            $contractCode = $matches[1];
+            if ($expectedContractCode !== null && $expectedContractCode !== '' && $contractCode !== $expectedContractCode) {
+                return 0;
+            }
+            return (int) $matches[2];
+        }
+
+        if ($expectedContractCode !== null && $expectedContractCode !== '') {
+            return 0;
+        }
+
+        if (preg_match('/A(\d{1,5})BO$/', $guia, $matches)) {
+            return (int) $matches[1];
+        }
+
+        return 0;
+    }
+
+    protected function getLastCorrelativeFromExternal(string $contractCode, int $localFallback = 0): int
+    {
+        if (!filter_var(env('API_OTRO_BACKEND_LAST_CODE_ENABLED', true), FILTER_VALIDATE_BOOLEAN)) {
+            return 0;
+        }
+
+        $url = trim((string) env('API_OTRO_BACKEND_LAST_CODE_URL', ''));
+        if ($url === '') {
+            return 0;
+        }
+
+        try {
+            $timeout = (int) env('API_OTRO_BACKEND_TIMEOUT', 20);
+            $client = Http::timeout($timeout)->acceptJson();
+            $verifySsl = filter_var(env('API_OTRO_BACKEND_VERIFY_SSL', true), FILTER_VALIDATE_BOOLEAN);
+            if (!$verifySsl) {
+                $client = $client->withoutVerifying();
+            }
+
+            $token = trim((string) env('API_OTRO_BACKEND_TOKEN', ''));
+            if ($token !== '') {
+                $client = $client->withToken($token);
+            }
+
+            $apiKeyHeader = trim((string) env('API_OTRO_BACKEND_API_KEY_HEADER', ''));
+            $apiKeyValue = trim((string) env('API_OTRO_BACKEND_API_KEY', ''));
+            if ($apiKeyHeader !== '' && $apiKeyValue !== '') {
+                $client = $client->withHeaders([$apiKeyHeader => $apiKeyValue]);
+            }
+
+            $response = $client->get($url, [
+                'n_contrato' => $contractCode,
+                'contract_code' => $contractCode,
+            ]);
+
+            if (
+                !$response->successful()
+                && $response->status() === 400
+                && stripos((string) $response->body(), 'plain HTTP request was sent to HTTPS port') !== false
+                && str_starts_with($url, 'http://')
+            ) {
+                $httpsUrl = 'https://' . substr($url, 7);
+                $response = $client->get($httpsUrl, [
+                    'n_contrato' => $contractCode,
+                    'contract_code' => $contractCode,
+                ]);
+            }
+
+            if (!$response->successful()) {
+                Log::warning('No se pudo obtener ultimo codigo desde API externa', [
+                    'url' => $url,
+                    'contract_code' => $contractCode,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+                return 0;
+            }
+
+            $body = $response->json();
+            if (!is_array($body)) {
+                return 0;
+            }
+
+            $candidates = [
+                data_get($body, 'codigo'),
+                data_get($body, 'guia'),
+                data_get($body, 'code'),
+                data_get($body, 'last_code'),
+                data_get($body, 'ultimo_codigo'),
+                data_get($body, 'data.codigo'),
+                data_get($body, 'data.guia'),
+                data_get($body, 'data.code'),
+                data_get($body, 'data.last_code'),
+                data_get($body, 'data.ultimo_codigo'),
+            ];
+
+            $rows = data_get($body, 'data');
+            if (is_array($rows)) {
+                $first = reset($rows);
+                if (is_array($first)) {
+                    $candidates[] = data_get($first, 'codigo');
+                    $candidates[] = data_get($first, 'guia');
+                    $candidates[] = data_get($first, 'code');
+                    $candidates[] = data_get($first, 'last_code');
+                    $candidates[] = data_get($first, 'ultimo_codigo');
+                }
+            }
+
+            foreach ($candidates as $candidate) {
+                if (!is_string($candidate) || trim($candidate) === '') {
+                    continue;
+                }
+
+                $correlative = $this->extractCorrelativeFromGuia($candidate, $contractCode);
+                if ($correlative > 0) {
+                    return $correlative;
+                }
+            }
+
+            return 0;
+        } catch (\Throwable $e) {
+            Log::warning('Error consultando ultimo codigo externo para generar guia', [
+                'url' => $url,
+                'contract_code' => $contractCode,
+                'local_fallback' => $localFallback,
+                'error' => $e->getMessage(),
+            ]);
+            return 0;
+        }
+    }
+
+    protected function resolveExternalGeneratedCode($responseBody): ?string
+    {
+        if (!is_array($responseBody)) {
+            return null;
+        }
+
+        $candidates = [
+            data_get($responseBody, 'codigo'),
+            data_get($responseBody, 'guia'),
+            data_get($responseBody, 'code'),
+            data_get($responseBody, 'data.codigo'),
+            data_get($responseBody, 'data.guia'),
+            data_get($responseBody, 'data.code'),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (!is_string($candidate) || trim($candidate) === '') {
+                continue;
+            }
+
+            $normalized = $this->normalizeGuia($candidate);
+            if ($normalized !== null) {
+                return $normalized;
+            }
+        }
+
+        return null;
+    }
+
+    protected function syncLocalGuideWithExternalCode(Solicitude $solicitude, string $externalCode): void
+    {
+        $externalCode = $this->normalizeGuia($externalCode);
+        if ($externalCode === null || $externalCode === $solicitude->guia) {
+            return;
+        }
+
+        if ($this->guiaAlreadyExists($externalCode, (int) $solicitude->id)) {
+            Log::warning('No se sincronizo guia local con codigo externo por duplicidad local', [
+                'solicitude_id' => $solicitude->id,
+                'guia_local' => $solicitude->guia,
+                'codigo_externo' => $externalCode,
+            ]);
+            return;
+        }
+
+        $oldGuia = $solicitude->guia;
+        $solicitude->guia = $externalCode;
+
+        try {
+            $generator = new BarcodeGeneratorPNG();
+            $barcode = $generator->getBarcode($solicitude->guia, $generator::TYPE_CODE_128);
+            $solicitude->codigo_barras = base64_encode($barcode);
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo regenerar codigo de barras al sincronizar guia externa', [
+                'solicitude_id' => $solicitude->id,
+                'guia' => $externalCode,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        $solicitude->save();
+
+        Evento::query()
+            ->where('codigo', $oldGuia)
+            ->where('sucursale_id', $solicitude->sucursale_id)
+            ->where('accion', 'Solicitud')
+            ->orderByDesc('id')
+            ->limit(1)
+            ->update(['codigo' => $externalCode]);
+
+        Log::info('Guia local sincronizada con codigo generado por API externa', [
+            'solicitude_id' => $solicitude->id,
+            'guia_anterior' => $oldGuia,
+            'guia_nueva' => $externalCode,
+        ]);
     }
 
     protected function buildGuiaData($sucursaleId, $tarifaId = null, $reencaminamiento = null, $departamento = null): array
@@ -1093,47 +1319,28 @@ class SolicitudeController extends Controller
             return ['error' => 'Sucursal no proporcionada.'];
         }
 
-        $tarifaId = is_numeric($tarifaId) ? (int) $tarifaId : null;
-
-        // Recuperar la sucursal y tarifa (tarifa opcional)
+        // Recuperar la sucursal
         $sucursal = Sucursale::find($sucursaleId);
-        $tarifa = $tarifaId ? Tarifa::find($tarifaId) : null;
 
         if (!$sucursal) {
             return ['error' => 'Sucursal no encontrada.'];
         }
 
-        $sucursalCode = preg_replace('/\s+/', '', trim((string) $sucursal->n_contrato));
-        if ($sucursalCode === '') {
-            $sucursalCode = str_pad((string) $sucursal->codigo_cliente, 4, '0', STR_PAD_LEFT);
+        // n_contrato (4 digitos) para formato: C{n_contrato}A{correlativo}BO
+        $contractDigits = preg_replace('/\D+/', '', (string) $sucursal->n_contrato);
+        if ($contractDigits === '') {
+            $contractDigits = preg_replace('/\D+/', '', (string) $sucursal->codigo_cliente);
         }
-        $sucursalOrigin = strtoupper(trim((string) $sucursal->origen));
-
-        // Numero de sucursal tomado del nombre (ej: "GESTORA SRZ 4" => "4", "GESTORA SRZ 12" => "12")
-        $sucursalNumero = '0';
-        if (preg_match('/(\d+)\s*$/', trim((string) $sucursal->nombre), $matches)) {
-            $sucursalNumero = $matches[1];
+        if ($contractDigits === '') {
+            return ['error' => 'La sucursal no tiene n_contrato/codigo_cliente valido para generar guia.'];
         }
+        $contractCode = str_pad(substr($contractDigits, -4), 4, '0', STR_PAD_LEFT);
 
-        // Prioridad: tarifa->departamento, luego departamento enviado, luego reencaminamiento, luego "000"
-        if ($tarifa) {
-            $destino = strtoupper(preg_replace('/\s+/', '', trim((string) $tarifa->departamento)));
-        } elseif (!empty($departamento)) {
-            $destino = strtoupper(preg_replace('/\s+/', '', trim((string) $departamento)));
-        } else {
-            $destino = strtoupper(preg_replace('/\s+/', '', trim((string) $reencaminamiento)));
-        }
-
-        if ($destino === '') {
-            $tarifaCode = '000';
-        } elseif (ctype_digit($destino)) {
-            $tarifaCode = str_pad($destino, 3, '0', STR_PAD_LEFT);
-        } else {
-            $tarifaCode = str_pad(substr($destino, 0, 3), 3, '0', STR_PAD_RIGHT);
-        }
-
-        // Secuencial por sucursal con 5 digitos al final
-        $lastNumber = $this->getLastCorrelativeBySucursal($sucursaleId);
+        // Secuencial global por n_contrato (misma empresa/contrato comparte correlativo).
+        // Toma el mayor entre local y API externa para no retroceder correlativo.
+        $lastLocalNumber = $this->getLastCorrelativeByContractCode($contractCode);
+        $lastExternalNumber = $this->getLastCorrelativeFromExternal($contractCode, $lastLocalNumber);
+        $lastNumber = max($lastLocalNumber, $lastExternalNumber);
         if ($lastNumber >= 99999) {
             return ['error' => 'Se alcanzo el limite maximo del correlativo para la sucursal.'];
         }
@@ -1141,7 +1348,7 @@ class SolicitudeController extends Controller
         $maxAttempts = 99999 - $lastNumber;
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             $newNumber = str_pad((string) ($lastNumber + $attempt), 5, '0', STR_PAD_LEFT);
-            $newGuia = "{$sucursalCode}{$sucursalOrigin}{$sucursalNumero}{$tarifaCode}{$newNumber}";
+            $newGuia = "C{$contractCode}A{$newNumber}BO";
             if (!$this->guiaAlreadyExists($newGuia)) {
                 return ['guia' => $newGuia];
             }
@@ -1778,13 +1985,27 @@ $solicitude->reencaminamiento = $request->reencaminamiento; // ✅ NUEVO
 
 public function storeEMS(Request $request)
 {
-    $request->validate([
-        'guia'        => 'required|string|max:255',
-        'peso_v'      => 'nullable|string|max:255',
-        'provincia'   => 'nullable|string|max:255',
-        'observacion' => 'nullable|string|max:255',
-        'reencaminamiento' => 'nullable|string|max:255',
+    $validator = Validator::make($request->all(), [
+        'guia'              => 'required|max:255',
+        'peso_v'            => 'nullable|numeric|min:0|max:99999',
+        'provincia'         => 'nullable|string|max:255',
+        'ciudad'            => 'nullable|string|max:255',
+        'observacion'       => 'nullable|string|max:1000',
+        'reencaminamiento'  => 'nullable|string|max:255',
+        'cartero_recogida_id' => 'nullable|integer|exists:carteros,id',
     ]);
+
+    if ($validator->fails()) {
+        Log::warning('Validacion storeEMS fallida', [
+            'errors' => $validator->errors()->toArray(),
+            'payload' => $request->all(),
+        ]);
+
+        return response()->json([
+            'message' => 'Los datos enviados no son validos.',
+            'errors' => $validator->errors(),
+        ], 422);
+    }
 
     $solicitude = new Solicitude();
 
@@ -1792,8 +2013,8 @@ public function storeEMS(Request $request)
     $solicitude->sucursale_id = null;
     $solicitude->tarifa_id    = null;
 
-    // Cartero logueado
-    $solicitude->cartero_recogida_id = Auth::id() ?? $request->cartero_recogida_id;
+    // Cartero logueado (guard de cartero) o enviado por payload.
+    $solicitude->cartero_recogida_id = $this->resolveCarteroId($request);
 
     // âœ… FECHA DE RECOJO (AHORA)
     $solicitude->fecha_recojo_c = now();
@@ -1814,8 +2035,10 @@ public function storeEMS(Request $request)
     $solicitude->ciudad = $request->provincia ?? $request->ciudad;
 
     // âœ… PESOS IGUALES
-    $solicitude->peso_v = $request->peso_v;
-    $solicitude->peso_o = $request->peso_v;
+    $peso = $request->input('peso_v');
+    $pesoFormatted = ($peso !== null && $peso !== '') ? number_format((float) $peso, 3, '.', '') : null;
+    $solicitude->peso_v = $pesoFormatted;
+    $solicitude->peso_o = $pesoFormatted;
 
     $solicitude->observacion = $request->observacion;
     $solicitude->reencaminamiento = $request->reencaminamiento;
@@ -2055,9 +2278,298 @@ public function storeEntregadoManual(Request $request)
 
     return response()->json($solicitude, 201);
 }
+private function normalizeCityKey(?string $value): string
+{
+    $value = trim((string) $value);
+    if ($value === '') {
+        return '';
+    }
 
+    if (function_exists('mb_strtoupper')) {
+        $value = mb_strtoupper($value, 'UTF-8');
+    } else {
+        $value = strtoupper($value);
+    }
+
+    $value = strtr($value, [
+        'Á' => 'A', 'À' => 'A', 'Â' => 'A', 'Ã' => 'A', 'Ä' => 'A',
+        'É' => 'E', 'È' => 'E', 'Ê' => 'E', 'Ë' => 'E',
+        'Í' => 'I', 'Ì' => 'I', 'Î' => 'I', 'Ï' => 'I',
+        'Ó' => 'O', 'Ò' => 'O', 'Ô' => 'O', 'Õ' => 'O', 'Ö' => 'O',
+        'Ú' => 'U', 'Ù' => 'U', 'Û' => 'U', 'Ü' => 'U',
+        'Ñ' => 'N',
+    ]);
+
+    $value = preg_replace('/[^A-Z0-9]+/', ' ', $value) ?? '';
+    return preg_replace('/\s+/', ' ', trim($value)) ?? '';
 }
 
+private function getCityAliases(?string $city): array
+{
+    $cityKey = $this->normalizeCityKey($city);
+    if ($cityKey === '') {
+        return [];
+    }
 
+    $groups = [
+        ['LA PAZ', 'LPB', 'LPZ'],
+        ['COCHABAMBA', 'CBB'],
+        ['SANTA CRUZ', 'SRZ', 'SCZ'],
+        ['ORURO', 'ORU'],
+        ['POTOSI', 'PTI'],
+        ['TARIJA', 'TJA'],
+        ['CHUQUISACA', 'SUCRE', 'SRE'],
+        ['BENI', 'BEN', 'TRINIDAD', 'TDD'],
+        ['PANDO', 'COBIJA', 'CIJ'],
+    ];
 
+    foreach ($groups as $group) {
+        $normalizedGroup = array_map(fn($item) => $this->normalizeCityKey($item), $group);
+        if (in_array($cityKey, $normalizedGroup, true)) {
+            return array_values(array_unique($normalizedGroup));
+        }
 
+        foreach ($normalizedGroup as $alias) {
+            if ($alias !== '' && str_contains($cityKey, $alias)) {
+                return array_values(array_unique($normalizedGroup));
+            }
+        }
+    }
+
+    return [$cityKey];
+}
+
+private function getExternalUserIdDefault(): int
+{
+    $defaultUserId = (int) env('API_OTRO_BACKEND_USER_ID', 7);
+    return $defaultUserId > 0 ? $defaultUserId : 7;
+}
+
+private function getExternalUserIdByCity(?string $city): int
+{
+    $defaultUserId = $this->getExternalUserIdDefault();
+    $mapRaw = trim((string) env('API_OTRO_BACKEND_USER_ID_BY_CITY', ''));
+    if ($mapRaw === '') {
+        return $defaultUserId;
+    }
+
+    $cityAliases = $this->getCityAliases($city);
+    if (empty($cityAliases)) {
+        return $defaultUserId;
+    }
+
+    $pairs = preg_split('/\s*,\s*/', $mapRaw, -1, PREG_SPLIT_NO_EMPTY);
+    foreach ($pairs as $pair) {
+        [$mapCity, $mapUserId] = array_pad(explode(':', $pair, 2), 2, null);
+        $normalizedMapCity = $this->normalizeCityKey($mapCity);
+        $userId = is_numeric($mapUserId) ? (int) $mapUserId : 0;
+
+        if ($normalizedMapCity !== '' && $userId > 0 && in_array($normalizedMapCity, $cityAliases, true)) {
+            return $userId;
+        }
+    }
+
+    return $defaultUserId;
+}
+
+private function resolveExternalUserReference(Solicitude $solicitude): ?string
+{
+    if (!empty($solicitude->sucursale_id)) {
+        $sucursal = Sucursale::query()
+            ->select('id', 'origen', 'nombre')
+            ->find($solicitude->sucursale_id);
+
+        if ($sucursal) {
+            $candidates = [
+                $sucursal->origen ?? null,
+                $sucursal->nombre ?? null,
+            ];
+
+            foreach ($candidates as $candidate) {
+                $value = trim((string) $candidate);
+                if ($value !== '') {
+                    return $value;
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+private function enviarAOtroBackend(Solicitude $solicitude): void
+{
+    try {
+        if (! filter_var(env('API_OTRO_BACKEND_ENABLED', true), FILTER_VALIDATE_BOOLEAN)) {
+            return;
+        }
+
+        $url = trim((string) env('API_OTRO_BACKEND_URL', ''));
+        if ($url === '') {
+            Log::warning('No se envio solicitud al otro backend: API_OTRO_BACKEND_URL vacio.', [
+                'guia' => $solicitude->guia,
+            ]);
+            return;
+        }
+
+        $direccionRemitente = null;
+        if (!empty($solicitude->direccion_id)) {
+            $direccionModel = Direccione::find($solicitude->direccion_id);
+            if ($direccionModel) {
+                $direccionRemitente = trim((string) ($direccionModel->direccion_especifica ?? ''));
+                if ($direccionRemitente === '') {
+                    $direccionRemitente = trim((string) ($direccionModel->direccion ?? ''));
+                }
+                if ($direccionRemitente === '') {
+                    $direccionRemitente = trim((string) ($direccionModel->nombre ?? ''));
+                }
+            } else {
+                // Mantener mapeo solicitado: direccion_id -> direccion_r.
+                $direccionRemitente = (string) $solicitude->direccion_id;
+            }
+        }
+        if (empty($direccionRemitente)) {
+            $direccionRemitente = 'N/D';
+        }
+
+        $destinoRaw = trim((string) ($solicitude->reencaminamiento ?? ''));
+        $ciudadRaw = trim((string) ($solicitude->ciudad ?? ''));
+        $destinosMap = [
+            'LPB' => 'LA PAZ',
+            'SRZ' => 'SANTA CRUZ',
+            'CBB' => 'COCHABAMBA',
+            'ORU' => 'ORURO',
+            'PTI' => 'POTOSI',
+            'TJA' => 'TARIJA',
+            'SRE' => 'CHUQUISACA',
+            'BEN' => 'BENI',
+            'CIJ' => 'PANDO',
+        ];
+        $destino = strtoupper($destinoRaw);
+        if (isset($destinosMap[$destino])) {
+            $destino = $destinosMap[$destino];
+        } elseif ($destino === '') {
+            $destino = strtoupper($ciudadRaw);
+            if (isset($destinosMap[$destino])) {
+                $destino = $destinosMap[$destino];
+            }
+        }
+        if ($destino === '') {
+            $destino = 'LA PAZ';
+        }
+
+        $userReference = $this->resolveExternalUserReference($solicitude);
+        $userReferenceSource = 'sucursal';
+
+        if ($userReference === null || trim($userReference) === '') {
+            $userReference = trim((string) ($solicitude->ciudad ?? ''));
+            $userReferenceSource = 'ciudad';
+        }
+        if ($userReference === null || trim($userReference) === '') {
+            $userReference = $destino;
+            $userReferenceSource = 'reencaminamiento';
+        }
+
+        $externalUserId = $this->getExternalUserIdByCity($userReference);
+
+        // Mapeo solicitado: direccion_especifica_d -> direccion_d.
+        $direccionDestino = trim((string) ($solicitude->direccion_especifica_d ?? ''));
+        if ($direccionDestino === '') {
+            $direccionDestino = $solicitude->direccion_d ?: 'N/D';
+        }
+
+        // Formato externo exacto solicitado (con compatibilidad de campos requeridos en destino).
+        // sucursale_id -> user_id
+        // direccion_id -> direccion_r
+        // guia -> codigo
+        // remitente -> nombre_r
+        // telefono -> telefono_r
+        // contenido -> contenido
+        // destinatario -> nombre_d
+        // reencaminamiento -> destino
+        // telefono_d -> telefono_d
+        // direccion_d -> direccion_d
+        // ciudad -> provincia
+        $payload = [
+            'user_id' => $externalUserId,
+            'direccion_r' => $direccionRemitente,
+            'codigo' => $solicitude->guia,
+            'nombre_r' => $solicitude->remitente,
+            'telefono_r' => $solicitude->telefono,
+            'contenido' => $solicitude->contenido,
+            'nombre_d' => $solicitude->destinatario,
+            'destino' => $destino,
+            'telefono_d' => $solicitude->telefono_d,
+            'direccion_d' => $direccionDestino,
+            'direccion' => $direccionDestino,
+            'provincia' => $solicitude->ciudad,
+            'estados_id' => 28,
+        ];
+
+        $timeout = (int) env('API_OTRO_BACKEND_TIMEOUT', 20);
+        $client = Http::timeout($timeout)->acceptJson();
+        $verifySsl = filter_var(env('API_OTRO_BACKEND_VERIFY_SSL', true), FILTER_VALIDATE_BOOLEAN);
+        if (!$verifySsl) {
+            $client = $client->withoutVerifying();
+        }
+
+        $token = trim((string) env('API_OTRO_BACKEND_TOKEN', ''));
+        if ($token !== '') {
+            $client = $client->withToken($token);
+        }
+
+        $apiKeyHeader = trim((string) env('API_OTRO_BACKEND_API_KEY_HEADER', ''));
+        $apiKeyValue = trim((string) env('API_OTRO_BACKEND_API_KEY', ''));
+        if ($apiKeyHeader !== '' && $apiKeyValue !== '') {
+            $client = $client->withHeaders([$apiKeyHeader => $apiKeyValue]);
+        }
+
+        $effectiveUrl = $url;
+        $response = $client->post($effectiveUrl, $payload);
+
+        if (
+            !$response->successful()
+            && $response->status() === 400
+            && stripos((string) $response->body(), 'plain HTTP request was sent to HTTPS port') !== false
+            && str_starts_with($effectiveUrl, 'http://')
+        ) {
+            $effectiveUrl = 'https://' . substr($effectiveUrl, 7);
+            $response = $client->post($effectiveUrl, $payload);
+        }
+
+        if (! $response->successful()) {
+            Log::error('Error al enviar solicitud al otro backend', [
+                'guia' => $solicitude->guia,
+                'url' => $effectiveUrl,
+                'status' => $response->status(),
+                'response' => $response->body(),
+                'payload' => $payload,
+                'user_reference' => $userReference,
+                'user_reference_source' => $userReferenceSource,
+            ]);
+        } else {
+            $responseJson = $response->json();
+            $externalCode = $this->resolveExternalGeneratedCode($responseJson);
+            if ($externalCode !== null) {
+                $this->syncLocalGuideWithExternalCode($solicitude, $externalCode);
+            }
+
+            Log::info('Solicitud enviada correctamente al otro backend', [
+                'guia' => $solicitude->guia,
+                'url' => $effectiveUrl,
+                'status' => $response->status(),
+                'response' => $responseJson,
+                'codigo_externo_detectado' => $externalCode,
+                'user_reference' => $userReference,
+                'user_reference_source' => $userReferenceSource,
+            ]);
+        }
+    } catch (\Throwable $e) {
+        Log::error('Excepcion al enviar solicitud al otro backend', [
+            'guia' => $solicitude->guia,
+            'url' => env('API_OTRO_BACKEND_URL'),
+            'error' => $e->getMessage(),
+        ]);
+    }
+}
+}
