@@ -467,7 +467,7 @@ class SolicitudeController extends Controller
             $query->whereRaw('1 = 0');
         }
 
-        $query->whereNotIn('estado', [3, 4]);
+        $query->whereIn('estado', [2, 9]);
 
         $this->applyCarteroSearch($query, $request->input('search'));
 
