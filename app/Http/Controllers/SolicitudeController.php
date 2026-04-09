@@ -2441,9 +2441,9 @@ private function enviarAOtroBackend(Solicitude $solicitude): void
             'ORU' => 'ORURO',
             'PTI' => 'POTOSI',
             'TJA' => 'TARIJA',
-            'SRE' => 'CHUQUISACA',
-            'BEN' => 'BENI',
-            'CIJ' => 'PANDO',
+            'SRE' => 'SUCRE',
+            'BEN' => 'TRINIDAD',
+            'CIJ' => 'COBIJA',
         ];
         $destino = strtoupper($destinoRaw);
         if (isset($destinosMap[$destino])) {
