@@ -79,6 +79,32 @@ class RecojoController extends Controller
         return $this->normalizeGuia($payload['guia'] ?? null);
     }
 
+    protected function normalizeProvince(?string $province): ?string
+    {
+        $value = trim((string) $province);
+        if ($value === '') {
+            return null;
+        }
+
+        $normalized = strtoupper($value);
+        $normalized = strtr($normalized, [
+            'Á' => 'A', 'À' => 'A', 'Â' => 'A', 'Ã' => 'A', 'Ä' => 'A',
+            'É' => 'E', 'È' => 'E', 'Ê' => 'E', 'Ë' => 'E',
+            'Í' => 'I', 'Ì' => 'I', 'Î' => 'I', 'Ï' => 'I',
+            'Ó' => 'O', 'Ò' => 'O', 'Ô' => 'O', 'Õ' => 'O', 'Ö' => 'O',
+            'Ú' => 'U', 'Ù' => 'U', 'Û' => 'U', 'Ü' => 'U',
+            'Ñ' => 'N',
+        ]);
+        $normalized = preg_replace('/[^A-Z0-9]+/', ' ', $normalized) ?? '';
+        $normalized = preg_replace('/\s+/', ' ', trim($normalized)) ?? '';
+
+        if (in_array($normalized, ['BENI', 'BEN', 'TRINIDAD', 'TDD'], true)) {
+            return 'TRINIDAD';
+        }
+
+        return $value;
+    }
+
     protected function mirrorToExternal(array $payload): array
     {
         $url = trim((string) env('PAQUETES_CONTRATO_MIRROR_URL', ''));
@@ -136,6 +162,7 @@ class RecojoController extends Controller
             'provincia' => 'nullable|string|max:255',
             'mapa' => 'nullable|string|max:1000',
         ]);
+        $data['provincia'] = $this->normalizeProvince($data['provincia'] ?? null);
 
         $sucursaleId = (int) $data['user_id'];
         $direccionId = $this->resolveDireccionId($sucursaleId, $data['direccion_r'] ?? null);

@@ -2339,6 +2339,21 @@ private function getCityAliases(?string $city): array
     return [$cityKey];
 }
 
+private function normalizeExternalProvince(?string $province): ?string
+{
+    $value = trim((string) $province);
+    if ($value === '') {
+        return null;
+    }
+
+    $provinceKey = $this->normalizeCityKey($value);
+    if (in_array($provinceKey, ['BENI', 'BEN', 'TRINIDAD', 'TDD'], true)) {
+        return 'TRINIDAD';
+    }
+
+    return $value;
+}
+
 private function getExternalUserIdDefault(): int
 {
     $defaultUserId = (int) env('API_OTRO_BACKEND_USER_ID', 7);
@@ -2434,6 +2449,7 @@ private function enviarAOtroBackend(Solicitude $solicitude): void
 
         $destinoRaw = trim((string) ($solicitude->reencaminamiento ?? ''));
         $ciudadRaw = trim((string) ($solicitude->ciudad ?? ''));
+        $provincia = $this->normalizeExternalProvince($ciudadRaw);
         $destinosMap = [
             'LPB' => 'LA PAZ',
             'SRZ' => 'SANTA CRUZ',
@@ -2502,7 +2518,7 @@ private function enviarAOtroBackend(Solicitude $solicitude): void
             'telefono_d' => $solicitude->telefono_d,
             'direccion_d' => $direccionDestino,
             'direccion' => $direccionDestino,
-            'provincia' => $solicitude->ciudad,
+            'provincia' => $provincia,
             'estados_id' => 28,
         ];
 
